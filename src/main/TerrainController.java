@@ -12,6 +12,7 @@ import javafx.animation.AnimationTimer;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Group;
@@ -21,6 +22,7 @@ import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Sphere;
@@ -31,14 +33,18 @@ import javafx.scene.shape.Sphere;
  * @author Administrator
  */
 public class TerrainController extends AnimationTimer implements Initializable {
+    private static final double CAMERA_TRANSLATE_SPEED = 1;
+    private static final double CAMERA_ROTATE_SPEED = 0.01;
 
     @FXML
     private AnchorPane mainPane;
     
     private HashMap<KeyCode, Boolean> inputMap = new HashMap<>();
     private SubScene terrainView;
-    private Group root = new Group();
+    private TransformLayer root = new TransformLayer();
     private PerspectiveCamera camera;
+    private double mousePosX;
+    private double mousePosY;
     private DoubleProperty pitch;
     private DoubleProperty yaw;
     private DoubleProperty cameraX;
@@ -80,6 +86,18 @@ public class TerrainController extends AnimationTimer implements Initializable {
             if (inputMap.containsKey(keyCode)) {
                 inputMap.put(keyCode, false);
             }
+        });
+        target.setOnMousePressed((final MouseEvent event) -> {
+            mousePosX = event.getSceneX();
+            mousePosY = event.getSceneY();
+        });
+        target.setOnMouseDragged((final MouseEvent event) -> {
+            double oldMousePosX = mousePosX;
+            double oldMousePosY = mousePosY;
+            mousePosX = event.getSceneX();
+            mousePosY = event.getSceneY();
+            yaw.set(yaw.get() + CAMERA_ROTATE_SPEED * (mousePosX - oldMousePosX));
+            pitch.set(pitch.get() - CAMERA_ROTATE_SPEED * (mousePosY - oldMousePosY));
         });
     }
     
@@ -139,20 +157,22 @@ public class TerrainController extends AnimationTimer implements Initializable {
     @Override
     public void handle(long now) {
         if (inputMap.get(KeyCode.W)) {
-            cameraX.set(cameraX.get() + Math.cos(pitch.get()) * Math.sin(yaw.get()));
-            cameraY.set(cameraY.get() + Math.sin(pitch.get()));
-            cameraZ.set(cameraZ.get() + Math.cos(pitch.get()) * Math.cos(yaw.get()));
+            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
+            cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
+            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
         }
         if (inputMap.get(KeyCode.S)) {
-            cameraX.set(cameraX.get() - Math.cos(pitch.get()) * Math.sin(yaw.get()));
-            cameraY.set(cameraY.get() - Math.sin(pitch.get()));
-            cameraZ.set(cameraZ.get() - Math.cos(pitch.get()) * Math.cos(yaw.get()));
+            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
+            cameraY.set(cameraY.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
+            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
         }
         if (inputMap.get(KeyCode.A)) {
-            yaw.set(yaw.get() - 0.02);
+            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get() + Math.PI / 2)));
+            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
         }
         if (inputMap.get(KeyCode.D)) {
-            yaw.set(yaw.get() + 0.02);
+            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get() + Math.PI / 2)));
+            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
         }
     }
 }
