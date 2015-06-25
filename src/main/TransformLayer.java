@@ -40,7 +40,7 @@ public class TransformLayer extends Group {
 
     public TransformLayer() { 
         super(); 
-        getTransforms().addAll(t, rz, ry, rx, s); 
+        getTransforms().addAll(t, p, rz, ry, rx, s, ip); 
     }
 
     public TransformLayer(RotateOrder rotateOrder) { 

@@ -9,16 +9,21 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.ResourceBundle;
 import javafx.animation.AnimationTimer;
+import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Sphere;
 
 /**
  * FXML Controller class
@@ -26,28 +31,35 @@ import javafx.scene.paint.Color;
  * @author Administrator
  */
 public class TerrainController extends AnimationTimer implements Initializable {
-    
+
     @FXML
-    private SubScene terrainView;
+    private AnchorPane mainPane;
     
-    private HashMap<KeyCode, Boolean> inputMap;
+    private HashMap<KeyCode, Boolean> inputMap = new HashMap<>();
+    private SubScene terrainView;
+    private Group root = new Group();
     private PerspectiveCamera camera;
     private DoubleProperty pitch;
     private DoubleProperty yaw;
-    private DoubleProperty forward;
-    private DoubleProperty strafe;
+    private DoubleProperty cameraX;
+    private DoubleProperty cameraY;
+    private DoubleProperty cameraZ;
 
     /**
      * Initializes the controller class.
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        terrainView = new SubScene(root, 640, 480, true, SceneAntialiasing.BALANCED);
+        mainPane.getChildren().add(terrainView);
         registerKey(KeyCode.W);
         registerKey(KeyCode.A);
         registerKey(KeyCode.S);
         registerKey(KeyCode.D);
         initInputMap(terrainView);
         initView();
+        buildTest();
+        start();
     }
     
     public void registerKey(KeyCode key) {
@@ -79,17 +91,68 @@ public class TerrainController extends AnimationTimer implements Initializable {
         camera.setFarClip(1000);
         terrainView.setCamera(camera);
         
-        Group root = new Group();
-        TransformLayer topTransform = new TransformLayer();
-        TransformLayer bottomTransform = new TransformLayer();
+        pitch = new SimpleDoubleProperty(0);
+        yaw = new SimpleDoubleProperty(0);
+        cameraX = new SimpleDoubleProperty(0);
+        cameraY = new SimpleDoubleProperty(0);
+        cameraZ = new SimpleDoubleProperty(0);
         
-        root.getChildren().add(topTransform);
-        topTransform.getChildren().add(bottomTransform);
-        bottomTransform.getChildren().add(camera);
+        TransformLayer cameraTransform = new TransformLayer();
+        cameraTransform.rxProperty().bind(new DoubleBinding() {
+            {super.bind(pitch);}
+
+            @Override
+            protected double computeValue() {
+                return Math.toDegrees(pitch.get());
+            }
+            
+        });
+        cameraTransform.ryProperty().bind(new DoubleBinding() {
+            {super.bind(yaw);}
+
+            @Override
+            protected double computeValue() {
+                return Math.toDegrees(yaw.get());
+            }
+            
+        });
+        cameraTransform.txProperty().bind(cameraX);
+        cameraTransform.tyProperty().bind(cameraY);
+        cameraTransform.tzProperty().bind(cameraZ);
+        
+        root.getChildren().add(cameraTransform);
+        cameraTransform.getChildren().add(camera);
+    }
+    
+    public void buildTest() {
+        for (int i = -50; i < 50; i += 2) {
+            for (int j = -50; j < 50; j += 2) {
+                Sphere sphere = new Sphere(0.5, 10);
+                sphere.setTranslateX(i);
+                sphere.setTranslateY(j);
+                sphere.setTranslateZ(10);
+                root.getChildren().add(sphere);
+            }
+        }
     }
 
     @Override
     public void handle(long now) {
-        // TODO
+        if (inputMap.get(KeyCode.W)) {
+            cameraX.set(cameraX.get() + Math.cos(pitch.get()) * Math.sin(yaw.get()));
+            cameraY.set(cameraY.get() + Math.sin(pitch.get()));
+            cameraZ.set(cameraZ.get() + Math.cos(pitch.get()) * Math.cos(yaw.get()));
+        }
+        if (inputMap.get(KeyCode.S)) {
+            cameraX.set(cameraX.get() - Math.cos(pitch.get()) * Math.sin(yaw.get()));
+            cameraY.set(cameraY.get() - Math.sin(pitch.get()));
+            cameraZ.set(cameraZ.get() - Math.cos(pitch.get()) * Math.cos(yaw.get()));
+        }
+        if (inputMap.get(KeyCode.A)) {
+            yaw.set(yaw.get() - 0.02);
+        }
+        if (inputMap.get(KeyCode.D)) {
+            yaw.set(yaw.get() + 0.02);
+        }
     }
 }
