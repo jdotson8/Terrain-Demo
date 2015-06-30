@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.util.Scanner;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -27,6 +28,31 @@ public class TerrainDemo extends Application {
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
+        
+        String expression = "1 + sin(3 * 4 / 2)";
+        String exp = expression.replaceAll("\\s+","");
+        Scanner parser = new Scanner(exp);
+        StringBuilder delimiter = new StringBuilder("((?<=\\()|(?=\\())|((?<=\\))|(?=\\)))");
+        for (String str : Operator.OPERATORS.keySet()) {
+            if (str.length() == 1) {
+                delimiter.append(String.format("|((?<=\\%1$s)|(?=\\%1$s))", str));
+            } else {
+                delimiter.append(String.format("|((?<=%1$s)|(?=%1$s))", str));
+            }
+        }
+        parser.useDelimiter(delimiter.toString());
+        System.out.println(delimiter);
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        System.out.println(parser.next());
+        
+        
     }
 
     /**
