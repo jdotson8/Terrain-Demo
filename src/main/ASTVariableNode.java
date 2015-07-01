@@ -5,6 +5,8 @@
  */
 package main;
 
+import java.util.HashMap;
+
 /**
  *
  * @author Administrator
@@ -15,8 +17,7 @@ public class ASTVariableNode extends ASTNode {
     }
 
     @Override
-    public double getValue(double x) {
+    public double getValue(HashMap<String, Double> variables) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
 }

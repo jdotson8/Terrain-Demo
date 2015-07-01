@@ -29,7 +29,7 @@ public class TerrainDemo extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        String expression = "1 + sin(3 * 4 / 2)";
+        /*String expression = "1 + sin(3 * 4 / 2)";
         String exp = expression.replaceAll("\\s+","");
         Scanner parser = new Scanner(exp);
         StringBuilder delimiter = new StringBuilder("((?<=\\()|(?=\\())|((?<=\\))|(?=\\)))");
@@ -50,9 +50,35 @@ public class TerrainDemo extends Application {
         System.out.println(parser.next());
         System.out.println(parser.next());
         System.out.println(parser.next());
-        System.out.println(parser.next());
-        
-        
+        System.out.println(parser.next());*/
+        String expression = "1 + 0.3453*x  * sinsinsinsinsin(2+ x/  7.0)";
+        String exp = expression.replaceAll("\\s+","");
+        Scanner parser = new Scanner(exp);
+        parser.useDelimiter(buildDelimiter());
+        System.out.println(parser.delimiter());
+        while(parser.hasNext()) {
+            System.out.println(parser.next());
+        }
+    }
+    
+    private String buildDelimiter() {
+        String characterClass = "";
+        String words = "";
+        for (String str : Operator.OPERATORS.keySet()) {
+            if (str.length() == 1) {
+                characterClass += str.matches("[\\[|\\]\\-\\^]") ? "\\" + str : str;
+            } else {
+                words += "|" + str;
+            }
+        }
+        for (String str : Function.FUNCTIONS.keySet()) {
+            if (str.length() == 1) {
+                characterClass += str.matches("[\\[|\\]\\-\\^]") ? "\\" + str : str;
+            } else {
+                words += "|" + str;
+            }
+        }
+        return String.format("((?<=([%1$s(),]%2$s))|(?=([%1$s(),]%2$s)))", characterClass, words);
     }
 
     /**

@@ -5,16 +5,13 @@
  */
 package main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
  *
  * @author Administrator
  */
-public class ASTNumberNode extends ASTNode{
-
-    @Override
-    public double getValue(HashMap<String, Double> variables) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+public interface Evaluable {
+    public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables);
 }

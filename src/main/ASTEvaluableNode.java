@@ -7,17 +7,22 @@ package main;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 
 /**
  *
  * @author Administrator
  */
-public class ASTOperatorNode extends ASTNode {
-
-    @Override
-    public double getValue(double x) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+public class ASTEvaluableNode extends ASTNode {
+    private Evaluable evaluable;
+    private ArrayList<ASTNode> arguments;
+    
+    public ASTEvaluableNode(Evaluable pEvaluable, ArrayList<ASTNode> pArguments) {
+        evaluable = pEvaluable;
+        arguments = pArguments;
     }
 
+    @Override
+    public double getValue(HashMap<String, Double> variables) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
