@@ -11,10 +11,20 @@ import java.util.HashMap;
  *
  * @author Administrator
  */
-public class ASTNumberNode extends ASTNode{
+public class NumberNode extends ASTNode {
+    private double value;
+    
+    public NumberNode(double value) {
+        this.value = value;
+    }
 
     @Override
-    public double getValue(HashMap<String, Double> variables) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public double getValue() {
+        return value;
+    }
+    
+    @Override
+    public void print() {
+        System.out.println(value);
     }
 }

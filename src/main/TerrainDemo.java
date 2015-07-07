@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.util.HashMap;
 import java.util.Scanner;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -29,56 +30,12 @@ public class TerrainDemo extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        /*String expression = "1 + sin(3 * 4 / 2)";
-        String exp = expression.replaceAll("\\s+","");
-        Scanner parser = new Scanner(exp);
-        StringBuilder delimiter = new StringBuilder("((?<=\\()|(?=\\())|((?<=\\))|(?=\\)))");
-        for (String str : Operator.OPERATORS.keySet()) {
-            if (str.length() == 1) {
-                delimiter.append(String.format("|((?<=\\%1$s)|(?=\\%1$s))", str));
-            } else {
-                delimiter.append(String.format("|((?<=%1$s)|(?=%1$s))", str));
-            }
-        }
-        parser.useDelimiter(delimiter.toString());
-        System.out.println(delimiter);
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());
-        System.out.println(parser.next());*/
-        String expression = "1 + 0.3453*x  * sinsinsinsinsin(2+ x/  7.0)";
-        String exp = expression.replaceAll("\\s+","");
-        Scanner parser = new Scanner(exp);
-        parser.useDelimiter(buildDelimiter());
-        System.out.println(parser.delimiter());
-        while(parser.hasNext()) {
-            System.out.println(parser.next());
-        }
-    }
-    
-    private String buildDelimiter() {
-        String characterClass = "";
-        String words = "";
-        for (String str : Operator.OPERATORS.keySet()) {
-            if (str.length() == 1) {
-                characterClass += str.matches("[\\[|\\]\\-\\^]") ? "\\" + str : str;
-            } else {
-                words += "|" + str;
-            }
-        }
-        for (String str : Function.FUNCTIONS.keySet()) {
-            if (str.length() == 1) {
-                characterClass += str.matches("[\\[|\\]\\-\\^]") ? "\\" + str : str;
-            } else {
-                words += "|" + str;
-            }
-        }
-        return String.format("((?<=([%1$s(),]%2$s))|(?=([%1$s(),]%2$s)))", characterClass, words);
+        ExpressionGrammar grammar = new ExpressionGrammar();
+        grammar.addVariable("x");
+        Expression exp = new Expression(grammar, "x*(x+x^2)^(x^2-x^3)^3*(2*x)+7");
+        exp.setVariable("x", 2);
+        exp.print();
+        System.out.println(exp.evaluate());
     }
 
     /**

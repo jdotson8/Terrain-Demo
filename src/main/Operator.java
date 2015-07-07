@@ -12,86 +12,77 @@ import java.util.HashMap;
  *
  * @author Administrator
  */
-public abstract class Operator implements Evaluable {
-    public static final HashMap<String, Operator> OPERATORS = new HashMap<>();
-    public static final Operator PLUS = new Operator("+", true, 1, false) {
+public abstract class Operator {
+    public static HashMap<String, Operator> DEFAULT_OPERATORS = new HashMap<>();
+    static {
+        DEFAULT_OPERATORS.put("+", new Operator("+", true, false, 1){
 
-        @Override
-        public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException {
-            if ((isBinary() && arguments.size() != 2) || (!isBinary() && arguments.size() != 1)) {
-                throw new IllegalArgumentException("Wrong number of arguments.");
-            } else {
-                return arguments.get(0).getValue(variables) + arguments.get(1).getValue(variables);
+            @Override
+            public double operate(ArrayList<ASTNode> operands) {
+                return operands.get(0).getValue() + operands.get(1).getValue();
             }
-        }
-    };
-    public static final Operator MINUS = new Operator("-", true, 1, false) {
+        });
+        DEFAULT_OPERATORS.put("-", new Operator("-", true, false, 1){
 
-        @Override
-        public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException {
-            if ((isBinary() && arguments.size() != 2) || (!isBinary() && arguments.size() != 1)) {
-                throw new IllegalArgumentException("Wrong number of arguments.");
-            } else {
-                return arguments.get(0).getValue(variables) - arguments.get(1).getValue(variables);
+            @Override
+            public double operate(ArrayList<ASTNode> operands) {
+                return operands.get(0).getValue() - operands.get(1).getValue();
             }
-        }
-    };
-    public static final Operator MULTIPLY = new Operator("*", true, 2, false) {
+        });
+        DEFAULT_OPERATORS.put("*", new Operator("*", true, false, 2){
 
-        @Override
-        public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException {
-            if ((isBinary() && arguments.size() != 2) || (!isBinary() && arguments.size() != 1)) {
-                throw new IllegalArgumentException("Wrong number of arguments.");
-            } else {
-                return arguments.get(0).getValue(variables) * arguments.get(1).getValue(variables);
+            @Override
+            public double operate(ArrayList<ASTNode> operands) {
+                return operands.get(0).getValue() * operands.get(1).getValue();
             }
-        }
-    };
-    public static final Operator DIVIDE = new Operator("/", true, 2, false) {
+        });
+        DEFAULT_OPERATORS.put("/", new Operator("/", true, false, 2){
 
-        @Override
-        public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException {
-            if ((isBinary() && arguments.size() != 2) || (!isBinary() && arguments.size() != 1)) {
-                throw new IllegalArgumentException("Wrong number of arguments.");
-            } else {
-                return arguments.get(0).getValue(variables) / arguments.get(1).getValue(variables);
+            @Override
+            public double operate(ArrayList<ASTNode> operands) {
+                return operands.get(0).getValue() / operands.get(1).getValue();
             }
-        }
-    };
-    public static final Operator POWER = new Operator("^", true, 3, true) {
+        });
+        DEFAULT_OPERATORS.put("^", new Operator("^", true, true, 3){
 
-        @Override
-        public double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException {
-            if ((isBinary() && arguments.size() != 2) || (!isBinary() && arguments.size() != 1)) {
-                throw new IllegalArgumentException("Wrong number of arguments.");
-            } else {
-                return Math.pow(arguments.get(0).getValue(variables), arguments.get(1).getValue(variables));
+            @Override
+            public double operate(ArrayList<ASTNode> operands) {
+                return Math.pow(operands.get(0).getValue(), operands.get(1).getValue());
             }
-        }
-    };
-
+        });
+    }
+    
+    private String symbol;
     private boolean isBinary;
-    private int precedence;
     private boolean isRightAssociative;
+    private int precedence;
             
-    public Operator(String pSymbol, boolean pIsBinary, int pPrecedence, boolean pIsRightAssociative) {
-        isBinary = pIsBinary;
-        precedence = pPrecedence;
-        isRightAssociative = pIsRightAssociative;
-        OPERATORS.put(pSymbol, this);
+    protected Operator(String symbol, boolean isBinary, boolean isRightAssociative, int precedence) {
+        if (!symbol.matches("[\\-+/*^!@#$%&:;',.<>?=_|~]*+")) {
+            throw new IllegalArgumentException("Invalid Operator Symbol");
+        } else {
+            this.symbol = symbol;
+        }
+        this.isBinary = isBinary;
+        this.isRightAssociative = isRightAssociative;
+        this.precedence = precedence;
+    }
+    
+    public String getSymbol() {
+        return symbol;
     }
     
     public boolean isBinary() {
         return isBinary;
     }
     
+    public boolean isRightAssociative() {
+        return isRightAssociative;
+    }
+    
     public int comparePrecedence(Operator other) {
         return precedence > other.precedence ? 1 : other.precedence == precedence ? 0 : -1;
     }
     
-    public boolean getIsRightAssociative() {
-        return isRightAssociative;
-    }
-    
-    public abstract double evaluate(ArrayList<ASTNode> arguments, HashMap<String, Double> variables) throws IllegalArgumentException;
+    public abstract double operate(ArrayList<ASTNode> operands);
 }
