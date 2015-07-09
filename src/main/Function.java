@@ -6,20 +6,69 @@
 package main;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 /**
  *
  * @author Administrator
  */
 public abstract class Function {
-    public static HashMap<String, Function> DEFAULT_FUNCTIONS = new HashMap<>();
+    public static ArrayList<Function> DEFAULT_FUNCTIONS = new ArrayList<>();
     static {
-        DEFAULT_FUNCTIONS.put("sin", new Function("sin", 1) {
+        DEFAULT_FUNCTIONS.add(new Function("sin", 1) {
 
             @Override
-            public double evaluate(ArrayList<ASTNode> arguments) {
+            public double evaluate(List<ASTNode> arguments) {
                 return Math.sin(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("cos", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.cos(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("tan", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.sin(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("log", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.log(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("log10", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.log10(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("logb", 2) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.log(arguments.get(0).getValue()) / Math.log(arguments.get(1).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("abs", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.abs(arguments.get(0).getValue());
+            }
+        });
+        DEFAULT_FUNCTIONS.add(new Function("sqrt", 1) {
+
+            @Override
+            public double evaluate(List<ASTNode> arguments) {
+                return Math.sqrt(arguments.get(0).getValue());
             }
         });
     }
@@ -27,8 +76,8 @@ public abstract class Function {
     private String name;
     private int argumentCount;
     
-    protected Function(String name, int argumentCount) {
-        if (!name.matches("([_]*+\\w*+)*+")) {
+    public Function(String name, int argumentCount) {
+        if (!name.matches("[a-zA-Z_]*+[\\w]*+")) {
             throw new IllegalArgumentException("Invalid Function Name");
         } else {
             this.name = name;
@@ -44,5 +93,5 @@ public abstract class Function {
         return argumentCount;
     }
     
-    public abstract double evaluate(ArrayList<ASTNode> arguments);
+    public abstract double evaluate(List<ASTNode> arguments);
 }

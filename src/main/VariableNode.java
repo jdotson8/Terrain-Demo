@@ -16,7 +16,7 @@ public class VariableNode extends ASTNode {
     HashMap<String, Double> values;
 
     public VariableNode(String name, HashMap<String, Double> values) {
-        if (!name.matches("([_]*+\\w*+)*+")) {
+        if (!name.matches("[a-zA-Z_]*+")) {
             throw new IllegalArgumentException("Invalid variable name.");
         } else {
             this.name = name;

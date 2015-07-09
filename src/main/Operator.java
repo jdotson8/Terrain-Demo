@@ -6,47 +6,47 @@
 package main;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 /**
  *
  * @author Administrator
  */
 public abstract class Operator {
-    public static HashMap<String, Operator> DEFAULT_OPERATORS = new HashMap<>();
+    public static ArrayList<Operator> DEFAULT_OPERATORS = new ArrayList<>();
     static {
-        DEFAULT_OPERATORS.put("+", new Operator("+", true, false, 1){
+        DEFAULT_OPERATORS.add(new Operator("+", true, false, 1){
 
             @Override
-            public double operate(ArrayList<ASTNode> operands) {
+            public double operate(List<ASTNode> operands) {
                 return operands.get(0).getValue() + operands.get(1).getValue();
             }
         });
-        DEFAULT_OPERATORS.put("-", new Operator("-", true, false, 1){
+        DEFAULT_OPERATORS.add(new Operator("-", true, false, 1){
 
             @Override
-            public double operate(ArrayList<ASTNode> operands) {
+            public double operate(List<ASTNode> operands) {
                 return operands.get(0).getValue() - operands.get(1).getValue();
             }
         });
-        DEFAULT_OPERATORS.put("*", new Operator("*", true, false, 2){
+        DEFAULT_OPERATORS.add(new Operator("*", true, false, 2){
 
             @Override
-            public double operate(ArrayList<ASTNode> operands) {
+            public double operate(List<ASTNode> operands) {
                 return operands.get(0).getValue() * operands.get(1).getValue();
             }
         });
-        DEFAULT_OPERATORS.put("/", new Operator("/", true, false, 2){
+        DEFAULT_OPERATORS.add(new Operator("/", true, false, 2){
 
             @Override
-            public double operate(ArrayList<ASTNode> operands) {
+            public double operate(List<ASTNode> operands) {
                 return operands.get(0).getValue() / operands.get(1).getValue();
             }
         });
-        DEFAULT_OPERATORS.put("^", new Operator("^", true, true, 3){
+        DEFAULT_OPERATORS.add(new Operator("^", true, true, 3){
 
             @Override
-            public double operate(ArrayList<ASTNode> operands) {
+            public double operate(List<ASTNode> operands) {
                 return Math.pow(operands.get(0).getValue(), operands.get(1).getValue());
             }
         });
@@ -58,7 +58,7 @@ public abstract class Operator {
     private int precedence;
             
     protected Operator(String symbol, boolean isBinary, boolean isRightAssociative, int precedence) {
-        if (!symbol.matches("[\\-+/*^!@#$%&:;',.<>?=_|~]*+")) {
+        if (!symbol.matches("[-+/*^!@#$%&:;'<>?=|~]*+")) {
             throw new IllegalArgumentException("Invalid Operator Symbol");
         } else {
             this.symbol = symbol;
@@ -84,5 +84,5 @@ public abstract class Operator {
         return precedence > other.precedence ? 1 : other.precedence == precedence ? 0 : -1;
     }
     
-    public abstract double operate(ArrayList<ASTNode> operands);
+    public abstract double operate(List<ASTNode> operands);
 }

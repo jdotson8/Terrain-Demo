@@ -33,18 +33,25 @@ public class Expression {
         main:
         while (parser.hasNext()) {
             next = parser.next();
+            System.out.println(next);
             switch (next) {
                 case "(":
                     evaluable.push(next);
+                    previous = next;
                     break;
                 case ",":
                 case ")":
                     while (!evaluable.isEmpty()) {
                         if (next.equals(",") && evaluable.peek().equals("(")) {
+                            previous = next;
                             continue main;
                         }
                         popped = evaluable.pop();
                         if (popped.equals("(")) {
+                            if (grammar.containsFunction(evaluable.peek())) {
+                                addFunctionNode(grammar.getFunction(evaluable.pop()), evaluated);
+                            }
+                            previous = next;
                             continue main;
                         } else if (grammar.containsOperator(popped)) {
                             addOperatorNode(grammar.getOperator(popped), evaluated);
@@ -72,9 +79,6 @@ public class Expression {
                     } else if (grammar.containsFunction(next)) {
                         evaluable.push(next);
                     } else if (grammar.containsVariable(next)) {
-                        if (grammar.containsVariable(previous)) {
-                            evaluable.push("*");
-                        }
                         evaluated.push(new VariableNode(next, values));
                     } else if (next.matches("\\d+(\\.\\d+)?")) {
                         evaluated.push(new NumberNode(Double.parseDouble(next)));
@@ -112,8 +116,8 @@ public class Expression {
     
     private void addFunctionNode(Function function, LinkedList<ASTNode> nodes) {
         ArrayList<ASTNode> arguments = new ArrayList<>();
-        for (int i = function.getArgumentCount() - 1; i >= 0; i--) {
-            arguments.set(i, nodes.pop());
+        for (int i = 0; i < function.getArgumentCount(); i++) {
+            arguments.add(0, nodes.pop());
         }
         nodes.push(new FunctionNode(function, arguments));
     }

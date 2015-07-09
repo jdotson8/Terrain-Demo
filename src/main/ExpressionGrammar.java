@@ -18,8 +18,12 @@ public class ExpressionGrammar {
     private ArrayList<String> variables;
     
     public ExpressionGrammar() {
-        operators = new HashMap<>(Operator.DEFAULT_OPERATORS);
-        functions = new HashMap<>(Function.DEFAULT_FUNCTIONS);
+        for (Operator operator : Operator.DEFAULT_OPERATORS) {
+            operators.put(operator.getSymbol(), operator);
+        }
+        for (Function function : Function.DEFAULT_FUNCTIONS) {
+            functions.put(function.getName(), function);
+        }
         variables = new ArrayList<>();
     }
     
@@ -56,21 +60,34 @@ public class ExpressionGrammar {
     }
     
     public String buildDelimiter() {
-        String characterClass = "";
-        String words = "";
+        String operatorGroup = "";
+        String functionGroup = "";
+        String variableGroup = "";
         for (String str : operators.keySet()) {
-            if (str.length() == 1) {
-                characterClass += str.matches("[|\\-\\^]") ? "\\" + str : str;
-            } else {
-                words += "|" + str;
+            if (!operatorGroup.equals("")) {
+                operatorGroup += "|";
+            }
+            str = " " + str;
+            String[] escapes = str.split("(?=[*|^+?$<>!=])");
+            if (!escapes[0].equals(" ")) {
+                operatorGroup += escapes[0].trim();
+            }
+            for (int i = 1; i < escapes.length; i++) {
+                operatorGroup += "\\" + escapes[i];
             }
         }
         for (String str : functions.keySet()) {
-            words += "|" + str;
+            if (!functionGroup.equals("")) {
+                functionGroup += "|";
+            }
+            functionGroup += str;
         }
         for (String str : variables) {
-            words += "|" + str;
+            if (!variableGroup.equals("")) {
+                variableGroup += "|";
+            }
+            variableGroup += str;
         }
-        return String.format("((?<=([%1$s(),]%2$s))|(?=([%1$s(),]%2$s)))", characterClass, words);
+        return String.format("((?<=%1$s)(?=%2$s|%3$s|\\d|\\())|((?<=%2$s)(?=\\())|((?<=%3$s|\\d|\\))(?=%1$s|\\)|,))|((?<=\\(|,)(?=%1$s|%2$s|%3$s|\\d|\\())", operatorGroup, functionGroup, variableGroup);
     }
 }

@@ -5,7 +5,9 @@
  */
 package main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -30,12 +32,41 @@ public class TerrainDemo extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        ExpressionGrammar grammar = new ExpressionGrammar();
+        /*ExpressionGrammar grammar = new ExpressionGrammar();
         grammar.addVariable("x");
-        Expression exp = new Expression(grammar, "x*(x+x^2)^(x^2-x^3)^3*(2*x)+7");
+        grammar.addVariable("six");
+        Expression exp = new Expression(grammar, "sixlog10( sqrt(x^x * x))");
+        exp.setVariable("six", 2);
         exp.setVariable("x", 2);
-        exp.print();
-        System.out.println(exp.evaluate());
+        //exp.print();
+        System.out.println(exp.evaluate());*/
+        ExpressionGrammar grammar = new ExpressionGrammar();
+        grammar.addVariable("bob");
+        grammar.addVariable("cat");
+        grammar.addVariable("bobcat");
+        grammar.addOperator(new Operator("+?",true, false, 1) {
+
+            @Override
+            public double operate(List<ASTNode> operands) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+            
+        });
+        grammar.addOperator(new Operator("=",true, false, 1) {
+
+            @Override
+            public double operate(List<ASTNode> operands) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+            
+        });
+        Scanner test = new Scanner("2.034+?bobcat+log10(-bob,(76))");
+        String del = grammar.buildDelimiter();
+        test.useDelimiter(del);
+        System.out.println(del);
+        while (test.hasNext()) {
+            System.out.println(test.next());
+        }
     }
 
     /**
