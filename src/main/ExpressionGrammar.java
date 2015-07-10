@@ -19,6 +19,9 @@ public class ExpressionGrammar {
     private ArrayList<String> variables;
     
     public ExpressionGrammar() {
+        unaryOperators = new HashMap<>();
+        binaryOperators = new HashMap<>();
+        functions = new HashMap<>();
         for (Operator operator : Operator.DEFAULT_OPERATORS) {
             if (operator.isBinary()) {
                 binaryOperators.put(operator.getSymbol(), operator);
@@ -34,9 +37,9 @@ public class ExpressionGrammar {
     
     public boolean containsOperator(String symbol) {
         if (symbol.startsWith("u_")) {
-            return unaryOperators.containsKey(symbol);
+            return unaryOperators.containsKey(symbol.substring(2));
         } else if (symbol.startsWith("b_")) {
-            return binaryOperators.containsKey(symbol);
+            return binaryOperators.containsKey(symbol.substring(2));
         } else {
             return unaryOperators.containsKey(symbol) || binaryOperators.containsKey(symbol);
         }
@@ -62,7 +65,7 @@ public class ExpressionGrammar {
         if (symbol.startsWith("u_")) {
             return getUnaryOperator(symbol.substring(2));
         } else if (symbol.startsWith("b_")) {
-            return getBinaryOperator(symbol.substring(1));
+            return getBinaryOperator(symbol.substring(2));
         } else if (unaryOperators.containsKey(symbol)) {
             return getUnaryOperator(symbol);
         } else {
@@ -107,33 +110,34 @@ public class ExpressionGrammar {
     }
     
     public String buildDelimiter() {
-        String operatorGroup = "";
+        String unaryOperatorGroup = "";
+        String binaryOperatorGroup = "";
         String functionGroup = "";
         String variableGroup = "";
         for (String str : unaryOperators.keySet()) {
-            if (!operatorGroup.equals("")) {
-                operatorGroup += "|";
+            if (!unaryOperatorGroup.equals("")) {
+                unaryOperatorGroup += "|";
             }
             str = " " + str;
             String[] escapes = str.split("(?=[*|^+?$<>!=])");
             if (!escapes[0].equals(" ")) {
-                operatorGroup += escapes[0].trim();
+                unaryOperatorGroup += escapes[0].trim();
             }
             for (int i = 1; i < escapes.length; i++) {
-                operatorGroup += "\\" + escapes[i];
+                unaryOperatorGroup += "\\" + escapes[i];
             }
         }
         for (String str : binaryOperators.keySet()) {
-            if (!operatorGroup.equals("")) {
-                operatorGroup += "|";
+            if (!binaryOperatorGroup.equals("")) {
+                binaryOperatorGroup += "|";
             }
             str = " " + str;
             String[] escapes = str.split("(?=[*|^+?$<>!=])");
             if (!escapes[0].equals(" ")) {
-                operatorGroup += escapes[0].trim();
+                binaryOperatorGroup += escapes[0].trim();
             }
             for (int i = 1; i < escapes.length; i++) {
-                operatorGroup += "\\" + escapes[i];
+                binaryOperatorGroup += "\\" + escapes[i];
             }
         }
         for (String str : functions.keySet()) {
@@ -148,6 +152,6 @@ public class ExpressionGrammar {
             }
             variableGroup += str;
         }
-        return String.format("((?<=%1$s)(?=%2$s|%3$s|\\d|\\())|((?<=%2$s)(?=\\())|((?<=%3$s|\\d|\\))(?=%1$s|\\)|,))|((?<=\\(|,)(?=%1$s|%2$s|%3$s|\\d|\\())", operatorGroup, functionGroup, variableGroup);
+        return String.format("((?<=%1$s)(?=%2$s|%3$s|%4$s|\\d|\\())|((?<=%2$s)(?=%1$s|%3$s|%4$s|\\d|\\())|((?<=%3$s)(?=\\())|((?<=%4$s|\\d|\\))(?=%1$s|%2$s|\\)|,))|((?<=\\(|,)(?=%1$s|%3$s|%4$s|\\d|\\())", unaryOperatorGroup, binaryOperatorGroup, functionGroup, variableGroup);
     }
 }

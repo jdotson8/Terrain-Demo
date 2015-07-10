@@ -27,14 +27,11 @@ public class Expression {
         String[] components = exp.split(grammar.buildDelimiter());
         LinkedList<String> evaluable = new LinkedList<>();
         LinkedList<ASTNode> evaluated = new LinkedList<>();
-        String popped = ""; 
-        String next = "";
-        String previous = "";
+        String popped; 
         main:
         for (int i = 0; i < components.length; i++) {
             if (components[i].equals("(")) {
                 evaluable.push(components[i]);
-                break;
             } else if (components[i].equals(",") || components[i].equals(")")) {
                 while (!evaluable.isEmpty()) {
                     if (components[i].equals(",") && evaluable.peek().equals("(")) {
@@ -55,13 +52,13 @@ public class Expression {
                 Operator o2 = null;
                 Operator unary = grammar.getUnaryOperator(components[i]);
                 Operator binary = grammar.getBinaryOperator(components[i]);
-                boolean unaryRight = unary.isRightAssociative();
                 if (unary != null && binary != null) {
+                    boolean unaryRight = unary.isRightAssociative();
                     if (i < components.length - 1){
                         Operator unaryNext = grammar.getUnaryOperator(components[i+1]);
                         Operator binaryNext = grammar.getBinaryOperator(components[i+1]);
-                        boolean unaryNextRight = unaryNext.isRightAssociative();
                         if (unaryNext != null && binaryNext != null) {
+                            boolean unaryNextRight = unaryNext.isRightAssociative();
                             if (!unaryRight && unaryNextRight) {
                                 if (unary.comparePrecedence(unaryNext) >= 0) {
                                     o1 = unary;
@@ -80,7 +77,7 @@ public class Expression {
                                 throw new IllegalStateException("Syntax Error");
                             }
                         } else if (unaryNext != null && binaryNext == null) {
-                            if (unaryNextRight) {
+                            if (unaryNext.isRightAssociative()) {
                                 o1 = binary;
                                 o2 = unaryNext;
                             } else {
@@ -94,7 +91,7 @@ public class Expression {
                                 throw new IllegalStateException("Syntax Error");
                             }
                         } else {
-                            if (i == 0 || (i > 0 && components[i-1].matches("[,(]"))) {
+                            if (i == 0 || (i > 0 && (components[i-1].matches("[,(]") || grammar.containsBinaryOperator(components[i-1])))) {
                                 o1 = unary;
                             } else {
                                 o1 = binary;
@@ -117,7 +114,7 @@ public class Expression {
                     if ((o3 = grammar.getOperator(evaluable.peek())) == null) {
                         break;
                     }
-                    if ((!o1.isRightAssociative() && o1.comparePrecedence(o3) == 0) || o1.comparePrecedence(o3) < 0) {
+                    if (!o1.isBinary() && ((!o1.isRightAssociative() && o1.comparePrecedence(o3) == 0) || o1.comparePrecedence(o3) < 0)) {
                         evaluable.pop();
                         addOperatorNode(o3, evaluated);
                     } else {
@@ -137,12 +134,12 @@ public class Expression {
                         evaluable.push("b_" + o2.getSymbol());
                     }
                 }
-            } else if (grammar.containsFunction(next)) {
-                evaluable.push(next);
-            } else if (grammar.containsVariable(next)) {
-                evaluated.push(new VariableNode(next, values));
-            } else if (next.matches("\\d+(\\.\\d+)?")) {
-                evaluated.push(new NumberNode(Double.parseDouble(next)));
+            } else if (grammar.containsFunction(components[i]) && i < components.length - 1 && components[i+1].equals("(")) {
+                evaluable.push(components[i]);
+            } else if (grammar.containsVariable(components[i])) {
+                evaluated.push(new VariableNode(components[i], values));
+            } else if (components[i].matches("\\d+(\\.\\d+)?")) {
+                evaluated.push(new NumberNode(Double.parseDouble(components[i])));
             } else {
                 throw new IllegalStateException("Syntax Error");
             }
@@ -151,8 +148,6 @@ public class Expression {
             popped = evaluable.pop();
             if (grammar.containsOperator(popped)) {
                 addOperatorNode(grammar.getOperator(popped), evaluated);
-            } else if (grammar.containsFunction(popped)) {
-                addFunctionNode(grammar.getFunction(popped), evaluated);
             } else {
                 throw new IllegalStateException("Error while parsing.");
             }

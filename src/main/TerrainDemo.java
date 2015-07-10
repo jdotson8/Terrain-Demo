@@ -41,32 +41,14 @@ public class TerrainDemo extends Application {
         //exp.print();
         System.out.println(exp.evaluate());*/
         ExpressionGrammar grammar = new ExpressionGrammar();
-        grammar.addVariable("bob");
-        grammar.addVariable("cat");
-        grammar.addVariable("bobcat");
-        grammar.addOperator(new Operator("+?",true, false, 1) {
-
-            @Override
-            public double operate(List<ASTNode> operands) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-            
-        });
-        grammar.addOperator(new Operator("=",true, false, 1) {
-
-            @Override
-            public double operate(List<ASTNode> operands) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-            
-        });
-        Scanner test = new Scanner("2.034+?bobcat+log10(-bob,(76))");
-        String del = grammar.buildDelimiter();
-        test.useDelimiter(del);
-        System.out.println(del);
+        grammar.addVariable("sin");
+        /*System.out.println(del);
         while (test.hasNext()) {
             System.out.println(test.next());
-        }
+        }*/
+        Expression exp = new Expression(grammar, "sin*sin(50)");
+        exp.setVariable("sin", 5);
+        System.out.println(exp.evaluate());
     }
 
     /**

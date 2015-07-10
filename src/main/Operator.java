@@ -29,6 +29,13 @@ public abstract class Operator {
                 return operands.get(0).getValue() - operands.get(1).getValue();
             }
         });
+        DEFAULT_OPERATORS.add(new Operator("-", false, true, 1){
+
+            @Override
+            public double operate(List<ASTNode> operands) {
+                return -operands.get(0).getValue();
+            }
+        });
         DEFAULT_OPERATORS.add(new Operator("*", true, false, 2){
 
             @Override

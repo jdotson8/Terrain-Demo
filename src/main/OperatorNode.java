@@ -32,9 +32,6 @@ public class OperatorNode extends ASTNode{
 
     @Override
     public void print() {
-        System.out.println(operator.getSymbol());
-        for(ASTNode op : operands) {
-            op.print();
-        }
+        System.out.println(operator.getSymbol() + " " + operands.size());
     }
 }
