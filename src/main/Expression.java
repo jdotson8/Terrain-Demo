@@ -24,70 +24,128 @@ public class Expression {
         values = new HashMap<String, Double>();
         String exp = expression.replaceAll("\\s+","");
         Scanner parser = new Scanner(exp);
-        parser.useDelimiter(grammar.buildDelimiter());
+        String[] components = exp.split(grammar.buildDelimiter());
         LinkedList<String> evaluable = new LinkedList<>();
         LinkedList<ASTNode> evaluated = new LinkedList<>();
         String popped = ""; 
         String next = "";
         String previous = "";
         main:
-        while (parser.hasNext()) {
-            next = parser.next();
-            System.out.println(next);
-            switch (next) {
-                case "(":
-                    evaluable.push(next);
-                    previous = next;
-                    break;
-                case ",":
-                case ")":
-                    while (!evaluable.isEmpty()) {
-                        if (next.equals(",") && evaluable.peek().equals("(")) {
-                            previous = next;
-                            continue main;
-                        }
-                        popped = evaluable.pop();
-                        if (popped.equals("(")) {
-                            if (grammar.containsFunction(evaluable.peek())) {
-                                addFunctionNode(grammar.getFunction(evaluable.pop()), evaluated);
-                            }
-                            previous = next;
-                            continue main;
-                        } else if (grammar.containsOperator(popped)) {
-                            addOperatorNode(grammar.getOperator(popped), evaluated);
-                        } else {
-                            addFunctionNode(grammar.getFunction(popped), evaluated);
-                        }
+        for (int i = 0; i < components.length; i++) {
+            if (components[i].equals("(")) {
+                evaluable.push(components[i]);
+                break;
+            } else if (components[i].equals(",") || components[i].equals(")")) {
+                while (!evaluable.isEmpty()) {
+                    if (components[i].equals(",") && evaluable.peek().equals("(")) {
+                        continue main;
                     }
-                    break;
-                default:
-                    if (grammar.containsOperator(next)) {
-                        Operator o1 = grammar.getOperator(next);
-                        Operator o2;
-                        while (!evaluable.isEmpty()) {
-                            if ((o2 = grammar.getOperator(evaluable.peek())) == null) {
-                                break;
-                            }
-                            if ((!o1.isRightAssociative() && o1.comparePrecedence(o2) == 0) || o1.comparePrecedence(o2) < 0) {
-                                evaluable.pop();
-                                addOperatorNode(o2, evaluated);
+                    popped = evaluable.pop();
+                    if (popped.equals("(")) {
+                        if (grammar.containsFunction(evaluable.peek())) {
+                            addFunctionNode(grammar.getFunction(evaluable.pop()), evaluated);
+                        }
+                        continue main;
+                    } else if (grammar.containsOperator(popped)) {
+                        addOperatorNode(grammar.getOperator(popped), evaluated);
+                    }
+                }
+            } else if (grammar.containsOperator(components[i])) {
+                Operator o1;
+                Operator o2 = null;
+                Operator unary = grammar.getUnaryOperator(components[i]);
+                Operator binary = grammar.getBinaryOperator(components[i]);
+                boolean unaryRight = unary.isRightAssociative();
+                if (unary != null && binary != null) {
+                    if (i < components.length - 1){
+                        Operator unaryNext = grammar.getUnaryOperator(components[i+1]);
+                        Operator binaryNext = grammar.getBinaryOperator(components[i+1]);
+                        boolean unaryNextRight = unaryNext.isRightAssociative();
+                        if (unaryNext != null && binaryNext != null) {
+                            if (!unaryRight && unaryNextRight) {
+                                if (unary.comparePrecedence(unaryNext) >= 0) {
+                                    o1 = unary;
+                                    o2 = binaryNext;
+                                } else {
+                                    o1 = binary;
+                                    o2 = unaryNext;
+                                }
+                            } else if (unaryRight && unaryNextRight) {
+                                o1 = binary;
+                                o2 = unaryNext;
+                            } else if (!unaryRight && !unaryNextRight) {
+                                o1 = unary;
+                                o2 = binaryNext;
                             } else {
-                                break;
+                                throw new IllegalStateException("Syntax Error");
+                            }
+                        } else if (unaryNext != null && binaryNext == null) {
+                            if (unaryNextRight) {
+                                o1 = binary;
+                                o2 = unaryNext;
+                            } else {
+                                throw new IllegalStateException("Syntax Error");
+                            }
+                        } else if (unaryNext == null && binaryNext != null) {
+                            if (!unaryRight) {
+                                o1 = unary;
+                                o2 = binaryNext;
+                            } else {
+                                throw new IllegalStateException("Syntax Error");
+                            }
+                        } else {
+                            if (i == 0 || (i > 0 && components[i-1].matches("[,(]"))) {
+                                o1 = unary;
+                            } else {
+                                o1 = binary;
                             }
                         }
-                        evaluable.push(next);
-                    } else if (grammar.containsFunction(next)) {
-                        evaluable.push(next);
-                    } else if (grammar.containsVariable(next)) {
-                        evaluated.push(new VariableNode(next, values));
-                    } else if (next.matches("\\d+(\\.\\d+)?")) {
-                        evaluated.push(new NumberNode(Double.parseDouble(next)));
                     } else {
-                        throw new IllegalStateException("Error while parsing.");
+                        if (!unaryRight) {
+                            o1 = unary;
+                        } else {
+                            throw new IllegalStateException("Syntax Error");
+                        }
                     }
-                
+                } else if (unary != null) {
+                    o1 = unary;
+                } else {
+                    o1 = binary;
+                }
+                Operator o3;
+                while (!evaluable.isEmpty()) {
+                    if ((o3 = grammar.getOperator(evaluable.peek())) == null) {
+                        break;
+                    }
+                    if ((!o1.isRightAssociative() && o1.comparePrecedence(o3) == 0) || o1.comparePrecedence(o3) < 0) {
+                        evaluable.pop();
+                        addOperatorNode(o3, evaluated);
+                    } else {
+                        break;
+                    }
+                }
+                if (!o1.isBinary()) {
+                    evaluable.push("u_" + o1.getSymbol());
+                } else {
+                    evaluable.push("b_" + o1.getSymbol());
+                }
+                if (o2 != null) {
+                    i++;
+                    if (!o2.isBinary()) {
+                        evaluable.push("u_" + o2.getSymbol());
+                    } else {
+                        evaluable.push("b_" + o2.getSymbol());
+                    }
+                }
+            } else if (grammar.containsFunction(next)) {
+                evaluable.push(next);
+            } else if (grammar.containsVariable(next)) {
+                evaluated.push(new VariableNode(next, values));
+            } else if (next.matches("\\d+(\\.\\d+)?")) {
+                evaluated.push(new NumberNode(Double.parseDouble(next)));
+            } else {
+                throw new IllegalStateException("Syntax Error");
             }
-            previous = next;
         }
         while (!evaluable.isEmpty()) {
             popped = evaluable.pop();
