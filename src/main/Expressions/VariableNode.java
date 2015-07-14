@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main;
+package main.Expressions;
 
 import java.util.HashMap;
 
@@ -11,7 +11,7 @@ import java.util.HashMap;
  *
  * @author Administrator
  */
-public class VariableNode extends ASTNode {
+public class VariableNode implements ASTNode {
     String name;
     HashMap<String, Double> values;
 
@@ -35,6 +35,6 @@ public class VariableNode extends ASTNode {
     
     @Override
     public void print() {
-        System.out.println(name);
+        System.out.print(name + " ");
     }
 }

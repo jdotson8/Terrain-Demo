@@ -5,6 +5,10 @@
  */
 package main;
 
+import main.Expressions.ASTNode;
+import main.Expressions.ExpressionGrammar;
+import main.Expressions.Operator;
+import main.Expressions.Expression;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,12 +46,25 @@ public class TerrainDemo extends Application {
         System.out.println(exp.evaluate());*/
         ExpressionGrammar grammar = new ExpressionGrammar();
         grammar.addVariable("sin");
-        /*System.out.println(del);
-        while (test.hasNext()) {
-            System.out.println(test.next());
-        }*/
-        Expression exp = new Expression(grammar, "sin*sin(50)");
+        grammar.addOperator(new Operator("!", false, false, 0) {
+
+            @Override
+            public double operate(List<ASTNode> operands) {
+                return operands.get(0).getValue()*2;
+            }
+            
+        });
+        grammar.addOperator(new Operator("!", true, false, 1) {
+
+            @Override
+            public double operate(List<ASTNode> operands) {
+                return operands.get(0).getValue()*operands.get(1).getValue();
+            }
+            
+        });
+        Expression exp = new Expression(grammar, "-sin!-2");
         exp.setVariable("sin", 5);
+        exp.print();
         System.out.println(exp.evaluate());
     }
 

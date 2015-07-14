@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main;
+package main.Expressions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +30,7 @@ public class Expression {
         String popped; 
         main:
         for (int i = 0; i < components.length; i++) {
+            System.out.println(components[i]);
             if (components[i].equals("(")) {
                 evaluable.push(components[i]);
             } else if (components[i].equals(",") || components[i].equals(")")) {
@@ -58,11 +59,12 @@ public class Expression {
                         Operator unaryNext = grammar.getUnaryOperator(components[i+1]);
                         Operator binaryNext = grammar.getBinaryOperator(components[i+1]);
                         if (unaryNext != null && binaryNext != null) {
+                            i++;
                             boolean unaryNextRight = unaryNext.isRightAssociative();
                             if (!unaryRight && unaryNextRight) {
                                 if (unary.comparePrecedence(unaryNext) >= 0) {
-                                    o1 = unary;
-                                    o2 = binaryNext;
+                                    addOperatorNode(unary, evaluated);
+                                    o1 = binaryNext;
                                 } else {
                                     o1 = binary;
                                     o2 = unaryNext;
@@ -71,12 +73,13 @@ public class Expression {
                                 o1 = binary;
                                 o2 = unaryNext;
                             } else if (!unaryRight && !unaryNextRight) {
-                                o1 = unary;
-                                o2 = binaryNext;
+                                addOperatorNode(unary, evaluated);
+                                o1 = binaryNext;
                             } else {
                                 throw new IllegalStateException("Syntax Error");
                             }
                         } else if (unaryNext != null && binaryNext == null) {
+                            i++;
                             if (unaryNext.isRightAssociative()) {
                                 o1 = binary;
                                 o2 = unaryNext;
@@ -84,9 +87,10 @@ public class Expression {
                                 throw new IllegalStateException("Syntax Error");
                             }
                         } else if (unaryNext == null && binaryNext != null) {
+                            i++;
                             if (!unaryRight) {
-                                o1 = unary;
-                                o2 = binaryNext;
+                                addOperatorNode(unary, evaluated);
+                                o1 = binaryNext;
                             } else {
                                 throw new IllegalStateException("Syntax Error");
                             }
@@ -114,7 +118,7 @@ public class Expression {
                     if ((o3 = grammar.getOperator(evaluable.peek())) == null) {
                         break;
                     }
-                    if (!o1.isBinary() && ((!o1.isRightAssociative() && o1.comparePrecedence(o3) == 0) || o1.comparePrecedence(o3) < 0)) {
+                    if (!o3.isBinary() || ((!o1.isRightAssociative() && o1.comparePrecedence(o3) == 0) || o1.comparePrecedence(o3) < 0)) {
                         evaluable.pop();
                         addOperatorNode(o3, evaluated);
                     } else {
@@ -122,12 +126,13 @@ public class Expression {
                     }
                 }
                 if (!o1.isBinary()) {
+                    System.out.println("Unary Operator Added");
                     evaluable.push("u_" + o1.getSymbol());
                 } else {
+                    System.out.println("Binary Operator Added");
                     evaluable.push("b_" + o1.getSymbol());
                 }
                 if (o2 != null) {
-                    i++;
                     if (!o2.isBinary()) {
                         evaluable.push("u_" + o2.getSymbol());
                     } else {
@@ -137,6 +142,7 @@ public class Expression {
             } else if (grammar.containsFunction(components[i]) && i < components.length - 1 && components[i+1].equals("(")) {
                 evaluable.push(components[i]);
             } else if (grammar.containsVariable(components[i])) {
+                System.out.println("Variable added");
                 evaluated.push(new VariableNode(components[i], values));
             } else if (components[i].matches("\\d+(\\.\\d+)?")) {
                 evaluated.push(new NumberNode(Double.parseDouble(components[i])));
@@ -149,11 +155,11 @@ public class Expression {
             if (grammar.containsOperator(popped)) {
                 addOperatorNode(grammar.getOperator(popped), evaluated);
             } else {
-                throw new IllegalStateException("Error while parsing.");
+                throw new IllegalStateException("Syntax Error");
             }
         }
         if (evaluated.size() != 1) {
-            throw new IllegalStateException("Error while parsing.");
+            throw new IllegalStateException("Syntax Error");
         }
         root = evaluated.pop();
     }

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main;
+package main.Expressions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,6 +83,14 @@ public class ExpressionGrammar {
     
     public Function getFunction(String name) {
         return functions.get(name);
+    }
+    
+    public void addOperator(Operator operator) {
+        if (operator.isBinary()) {
+            binaryOperators.put(operator.getSymbol(), operator);
+        } else {
+            unaryOperators.put(operator.getSymbol(), operator);
+        }
     }
     
     public void addUnaryOperator(Operator operator) {

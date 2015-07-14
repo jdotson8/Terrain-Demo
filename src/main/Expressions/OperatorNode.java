@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main;
+package main.Expressions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import java.util.HashMap;
  *
  * @author Administrator
  */
-public class OperatorNode extends ASTNode{
+public class OperatorNode implements ASTNode{
     private Operator operator;
     private ArrayList<ASTNode> operands;
     
@@ -32,6 +32,14 @@ public class OperatorNode extends ASTNode{
 
     @Override
     public void print() {
-        System.out.println(operator.getSymbol() + " " + operands.size());
+        if (operator.isBinary()) {
+            System.out.print("b_" + operator.getSymbol() + "(");
+        } else {
+            System.out.print("u_" + operator.getSymbol() + "(");
+        }
+        for (ASTNode op : operands) {
+            op.print();
+        }
+        System.out.print(")");
     }
 }

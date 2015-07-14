@@ -3,18 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Scanner;
+package main.Expressions;
 
 /**
  *
  * @author Administrator
  */
-public abstract class ASTNode {
+public interface ASTNode {
     public abstract double getValue();
     public abstract void print();
 }
