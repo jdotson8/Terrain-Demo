@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package main.Expressions;
+package main.expressions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,9 +19,12 @@ public class Expression {
     private ASTNode root;
     private HashMap<String, Double> values;
     
-    public Expression(ExpressionGrammar grammar, String expression) {
+    public Expression(ExpressionGrammar grammar) {
         this.grammar = grammar;
         values = new HashMap<String, Double>();
+    }
+    
+    public void buildExpression(String expression) {
         String exp = expression.replaceAll("\\s+","");
         Scanner parser = new Scanner(exp);
         String[] components = exp.split(grammar.buildDelimiter());

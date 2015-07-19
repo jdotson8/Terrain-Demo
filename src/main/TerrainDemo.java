@@ -5,10 +5,10 @@
  */
 package main;
 
-import main.Expressions.ASTNode;
-import main.Expressions.ExpressionGrammar;
-import main.Expressions.Operator;
-import main.Expressions.Expression;
+import main.expressions.ASTNode;
+import main.expressions.ExpressionGrammar;
+import main.expressions.Operator;
+import main.expressions.Expression;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +20,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 
 /**

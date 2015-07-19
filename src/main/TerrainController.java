@@ -25,7 +25,11 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.CullFace;
+import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
+import javafx.scene.shape.TriangleMesh;
 
 /**
  * FXML Controller class
@@ -62,6 +66,14 @@ public class TerrainController extends AnimationTimer implements Initializable {
         registerKey(KeyCode.A);
         registerKey(KeyCode.S);
         registerKey(KeyCode.D);
+        TriangleMesh test = new TriangleMesh();
+        test.getPoints().addAll(10f, 10f, 10f, Float.NaN, Float.NaN, Float.NaN, -10f, 10f, 10f, -10f, -10f, 10f, Float.NaN, Float.NaN, Float.NaN);
+        test.getTexCoords().addAll(0f,0f);
+        test.getFaces().addAll(0, 0, 2, 0, 3, 0);
+        MeshView testMesh = new MeshView(test);
+        testMesh.setCullFace(CullFace.NONE);
+        testMesh.setMaterial(new PhongMaterial(Color.WHITE));
+        root.getChildren().add(testMesh);
         initInputMap(terrainView);
         initView();
         buildTest();
@@ -102,7 +114,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
     }
     
     public void initView() {
-        terrainView.setFill(Color.BLACK);
+        terrainView.setFill(Color.WHITE);
         camera = new PerspectiveCamera(true);
         camera.setFieldOfView(45);
         camera.setNearClip(1);

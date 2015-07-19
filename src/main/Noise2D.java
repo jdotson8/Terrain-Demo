@@ -8,13 +8,19 @@ package main;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Point3D;
+import main.expressions.Expression;
+import main.expressions.ExpressionGrammar;
 
 /**
  *
  * @author Administrator
  */
 public class Noise2D {
+    private static final ExpressionGrammar NOISE_GRAMMAR = new ExpressionGrammar();
+    
     private static final double F2 = 0.5*(Math.sqrt(3.0)-1.0);
     private static final double G2 = (3.0-Math.sqrt(3.0))/6.0;
     private static final double CONTRIBUTION_FACTOR = 0.5;
@@ -30,6 +36,7 @@ public class Noise2D {
         for (int i = 0; i < SUPPLY_LENGTH; i++) {
             SUPPLY[i] = (short) i;
         }
+        NOISE_GRAMMAR.addVariable("x");
     }
 
     private final short[] perm;
@@ -111,22 +118,59 @@ public class Noise2D {
         return NORMALIZE_FACTOR * (n0 + n1 + n2);
     }
     
-    public void addNoiseLayer(double amplitude, double frequency) {
-        noiseLayers.add(new NoiseLayer(amplitude, frequency));
+    public void addNoiseLayer(double amplitude, double frequency, String expression) {
+        noiseLayers.add(new NoiseLayer());
     }
+    
+    public void setAmplitude(int index, double amplitude) {
+        noiseLayers.get(index).setAmplitude(amplitude);
+    }
+    
+    public void setFrequency(int index, double frequency) {
+        noiseLayers.get(index).setFrequency(frequency);
+    }
+    
+    public void setExpression(int index, String expString) {
+        noiseLayers.get(index).changeExpression(expString);
+    }
+    
+    public double getValue(double x, double y) {
+        double value = 0;
+        for (NoiseLayer layer : noiseLayers) {
+            value += layer.getValue(x, y);
+        }
+        return value;
+    }
+    
+    
 
     
     private class NoiseLayer {
-        private double amplitude;
-        private double frequency;
+        double amplitude;
+        double frequency;
+        Expression expression;
 
-        public NoiseLayer(double amp, double freq) {
-            amplitude = amp;
-            frequency = freq;
+        public NoiseLayer() {
+            amplitude = 0;
+            frequency = 0;
+            this.expression = new Expression(NOISE_GRAMMAR);
+        }
+        
+        public void setAmplitude(double amplitude) {
+            this.amplitude = amplitude;
+        }
+        
+        public void setFrequency(double frequency) {
+            this.frequency = frequency;
+        }
+        
+        public void changeExpression(String expString) {
+            expression.buildExpression(expString);
         }
 
         public double getValue(double x, double y) {
-            return amplitude * sample(frequency * x, frequency * y);
+            expression.setVariable("x", amplitude * sample(frequency * x, frequency * y));
+            return expression.evaluate();
         }
     }
 }
