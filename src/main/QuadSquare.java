@@ -27,7 +27,8 @@ public class QuadSquare {
     private QuadSquare[] children;
     private Coordinate[] corners = new Coordinate[4];
     private Coordinate[] verts = new Coordinate[5];
-    private Coordinate maxError;
+    private float maxError;
+    private Coordinate errorVert;
     private int index;
     private float size;
     private boolean enabled;
@@ -37,31 +38,17 @@ public class QuadSquare {
         this.parent = parent;
         this.index = index;
         size = 0.5f * parent.size;
-        switch (index) {
-            case 0:
-                corners[0] = parent.corners[0];
-                corners[1] = parent.verts[1];
-                corners[2] = parent.verts[4];
-                corners[3] = parent.verts[0];
-                break;
-            case 1:
-                corners[0] = parent.verts[1];
-                corners[1] = parent.corners[1];
-                corners[2] = parent.verts[2];
-                corners[3] = parent.verts[4];
-                break;
-            case 2:
-                corners[0] = parent.verts[4];
-                corners[1] = parent.verts[2];
-                corners[2] = parent.corners[2];
-                corners[3] = parent.verts[3];
-                break;
-            case 3:
-                corners[0] = parent.verts[0];
-                corners[1] = parent.verts[4];
-                corners[2] = parent.verts[3];
-                corners[3] = parent.corners[3];
-                break;
+        
+        for (int i = 0; i < corners.length; i++) {
+            if (i == index) {
+                corners[i] = parent.corners[i];
+            } else if (((i + 1) % 4) == index) {
+                corners[i] = parent.verts[index];
+            } else if (((i + 2) % 4) == index) {
+                corners[i] = parent.verts[4];
+            } else {
+                corners[i] = parent.verts[(index + 1) % 4];
+            }
         }
 
         verts[0] = new Coordinate(corners[1].getX() + size, corners[1].getY() + 0.5f * size);
@@ -71,30 +58,10 @@ public class QuadSquare {
         verts[4] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() + 0.5f * size);
         
         float error;
-        data.addVertex(verts[4]);
-        if ((index & 1) == 1) {
-            error = Math.abs(data.getHeight(verts[4]) - (data.getHeight(corners[1]) + data.getHeight(corners[3])) * 0.5f);
-            data.setError(verts[4], error);
-        } else {
-            error = Math.abs(data.getHeight(verts[4]) - (data.getHeight(corners[1]) + data.getHeight(corners[3])) * 0.5f);
-            data.setError(verts[4], error);
-        }
-        maxError = verts[4];
-        float maxErrorValue = data.getError(maxError);
-        for (int i = 0; i < verts.length - 1; i++) {
-            if (!data.containsVertex(verts[i])) {
-                data.addVertex(verts[i]);
-                error = Math.abs(data.getHeight(verts[i]) - (data.getHeight(corners[(i-1)%4]) + data.getHeight(corners[i]))*0.5f);
-                data.setError(verts[i], error);
-                if (error > maxErrorValue) {
-                    maxError = verts[i];
-                    maxErrorValue = data.getError(maxError);
-                }
-            } else {
-                if (data.getError(verts[i]) > maxErrorValue) {
-                    maxError = verts[i];
-                    maxErrorValue = data.getError(maxError);
-                }
+        for (int i = 0; i < verts.length; i++) {
+            error = data.addVertex(verts[i]);
+            if (error > maxError) {
+                errorVert = verts[i];
             }
         }   
     }
@@ -172,11 +139,29 @@ public class QuadSquare {
         }
         
         float addVertex(Coordinate c) {
-            VertexData vert = vertices.computeIfAbsent(c, key -> new VertexData((float)noise.getValue(key.getX(), key.getY())));
-            if (vert == null) {
-                return Float.NaN;
-            } else {
+            VertexData vert = vertices.computeIfAbsent(c, key -> {
+                float height = (float)noise.getValue(key.getX(), key.getY());
+                float error = 0;
+                if (key.equals(verts[4])) {
+                    if ((index & 1) == 1) {
+                        error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
+                    } else {
+                        error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
+                    }
+                } else {
+                    for (int i = 0; i < 4; i++) {
+                        if (key.equals(verts[i])) {
+                            error = Math.abs(height - (getHeight(corners[(i-1)%4]) + getHeight(corners[i]))*0.5f);
+                            break;
+                        }
+                    }
+                }
+                return new VertexData(height, error);
+            });
+            if (vert != null) {
                 return vert.getError();
+            } else {
+                return getError(c);
             }
         }
         
@@ -186,10 +171,6 @@ public class QuadSquare {
         
         float getError(Coordinate c) {
             return vertices.get(c).getError();
-        }
-        
-        void setError(Coordinate c, float error) {
-            vertices.get(c).setError(error);
         }
         
         float isEnabled(Coordinate c) {

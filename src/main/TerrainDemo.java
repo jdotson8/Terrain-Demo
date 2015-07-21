@@ -60,22 +60,18 @@ public class TerrainDemo extends Application {
                 return thread;
             }
         });
-        for (int i = 0; i < 100; i++) {
-            test.put(new Coordinate(i,i), new VertexData(5f));
-        }
         Task<Boolean> task1 = new Task<Boolean>() {
 
             @Override
             protected Boolean call() throws Exception {
                 System.out.println("Starting task 1");
-                test.computeIfPresent(new Coordinate(5,5), (key, value) -> {
+                test.computeIfAbsent(new Coordinate(5,5), (key) -> {
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                        System.out.println("Interrupted");
+                        System.out.println("1 Interrupted");
                     }
-                    value.setError(10f);
-                    return value;
+                    return new VertexData(5f, 10f);
                 });
                 System.out.println("Finishing 1");
                 return true;
@@ -86,8 +82,17 @@ public class TerrainDemo extends Application {
             @Override
             protected Boolean call() throws Exception {
                 System.out.println("Starting task 2");
-                //Thread.sleep(5000);
-                System.out.println("Error: " + test.get(new Coordinate(5,5)).getError());
+                VertexData present = test.computeIfAbsent(new Coordinate(5,5), (key) -> {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ex1) {
+                        System.out.println("2 Interrupted");
+                    }
+                    return new VertexData(5f, 15f);
+                });
+                if (present != null) {
+                    System.out.println(present.getError());
+                }
                 System.out.println("Finishing 2");
                 return true;
             }

@@ -14,9 +14,9 @@ public class VertexData {
     private float error;
     private boolean enabled;
     
-    VertexData(float height) {
+    VertexData(float height, float error) {
         this.height = height;
-        error = 0;
+        this.error = error;
         enabled = false;
     }
     
