@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.awt.geom.Point2D;
 import main.expressions.ASTNode;
 import main.expressions.ExpressionGrammar;
 import main.expressions.Operator;
@@ -13,7 +14,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -37,36 +45,70 @@ public class TerrainDemo extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        /*ExpressionGrammar grammar = new ExpressionGrammar();
-        grammar.addVariable("x");
-        grammar.addVariable("six");
-        Expression exp = new Expression(grammar, "sixlog10( sqrt(x^x * x))");
-        exp.setVariable("six", 2);
-        exp.setVariable("x", 2);
-        //exp.print();
-        System.out.println(exp.evaluate());*/
-        ExpressionGrammar grammar = new ExpressionGrammar();
-        grammar.addVariable("sin");
-        grammar.addOperator(new Operator("!", false, false, 0) {
+        Coordinate a = new Coordinate(6f, 5f);
+        Coordinate b = new Coordinate(6f, 5f);
+        Coordinate c = new Coordinate(5f, 6f);
+        Coordinate d = new Coordinate(5f, 5f);
+        
+        ConcurrentHashMap<Coordinate, VertexData> test = new ConcurrentHashMap<>();
+        ExecutorService ex = Executors.newFixedThreadPool(5, new ThreadFactory() {
+            @Override
+            public Thread newThread(final Runnable runnable) {
+                Thread thread = Executors.defaultThreadFactory()
+                        .newThread(runnable);
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
+        for (int i = 0; i < 100; i++) {
+            test.put(new Coordinate(i,i), new VertexData(5f));
+        }
+        Task<Boolean> task1 = new Task<Boolean>() {
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue()*2;
+            protected Boolean call() throws Exception {
+                System.out.println("Starting task 1");
+                test.computeIfPresent(new Coordinate(5,5), (key, value) -> {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        System.out.println("Interrupted");
+                    }
+                    value.setError(10f);
+                    return value;
+                });
+                System.out.println("Finishing 1");
+                return true;
             }
-            
-        });
-        grammar.addOperator(new Operator("!", true, false, 1) {
+        };
+        Task<Boolean> task2 = new Task<Boolean>() {
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue()*operands.get(1).getValue();
+            protected Boolean call() throws Exception {
+                System.out.println("Starting task 2");
+                //Thread.sleep(5000);
+                System.out.println("Error: " + test.get(new Coordinate(5,5)).getError());
+                System.out.println("Finishing 2");
+                return true;
             }
             
-        });
-        Expression exp = new Expression(grammar, "-sin!-2");
-        exp.setVariable("sin", 5);
-        exp.print();
-        System.out.println(exp.evaluate());
+        };
+        ex.submit(task1);
+        ex.submit(task2);
+        
+        
+        /*System.out.println(a.hashCode() == b.hashCode());
+        System.out.println(a.hashCode() == c.hashCode());
+        System.out.println(a.hashCode() == d.hashCode());
+        /*for (int squareindex = 0; squareindex < 4; squareindex++) {
+            for (int vertindex = 0; vertindex < 4; vertindex++) {
+                int test1 = (squareindex ^ 1) ^ ((vertindex & 1) << 1);
+                boolean test2 = (((vertindex - squareindex) & 2) > 0) ? true : false;
+                System.out.println("squareindex: " + squareindex + " vertindex: " + vertindex);
+                System.out.println(test1);
+                System.out.println(test2);
+            }
+        }*/
     }
 
     /**

@@ -25,4 +25,18 @@ public class Coordinate {
     public float getY() {
         return y;
     }
+    
+    @Override
+    public int hashCode() {
+        int bits = Float.floatToIntBits(x);
+        bits = bits * 15 ^ Float.floatToIntBits(y);
+        return ((bits >> 16) ^ 1);
+    }
+    
+    public boolean equals(Object o) {
+        if (!(o instanceof Coordinate))
+            return false;
+        Coordinate c = (Coordinate)o;
+        return x == c.x && y == c.y;
+    }
 }
