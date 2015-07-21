@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -16,12 +17,14 @@ import java.util.concurrent.ThreadFactory;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.scene.Group;
+import javafx.scene.shape.TriangleMesh;
 
 /**
  *
  * @author Administrator
  */
 public class QuadSquare {
+    private static final float DETAIL_THRESHOLD = 1;
     private SharedData data; 
     private QuadSquare parent;
     private QuadSquare[] children;
@@ -67,14 +70,39 @@ public class QuadSquare {
     }
     
     public boolean subdivide(int childIndex) {
-        data.setEnabled(children[childIndex].verts[0], true);
-        if (enableEdgeVertex(childIndex) && enableEdgeVertex((childIndex + 1) % 3)) {
-            
+        for (int i = 0; i < children.length; i++) {
+            int localX = ((i % 3) == 0) ? 1 : -1;
+            int localY = ((i & 2) == 0) ? 1 : -1;
+            Coordinate center = new Coordinate(corners[1].getX() + localX * 0.25f * size, corners[1].getY() + localY * 0.25f * size);
+            if (!data.isLoading(center)) {
+                data.load(center, this, i);
+            }
         }
-        return true;
+        
+        if (data.isEnabled(children[childIndex].verts[0])) {
+            return true;
+        } else if (subdivideNeighbor(childIndex) && subdivideNeighbor((childIndex + 1) % 3)) {
+            data.setEnabled(verts[childIndex], true);
+            data.setEnabled(verts[(childIndex + 1) % 3], true);
+            data.setEnabled(children[childIndex].verts[0], true);
+            return true;
+        } else {
+            return false;
+        }
     }
     
-    public boolean enableEdgeVertex(int vertIndex) {
+    public boolean subdivideNeighbor(int vertIndex) {
+        if (data.isEnabled(verts[vertIndex])) {
+            return true;
+        }
+        
+        float xShift = (vertIndex == 0) ? 0.5f * size : ((vertIndex == 2) ? -0.5f * size : 0f);
+        float yShift = (vertIndex == 1) ? 0.5f * size : ((vertIndex == 3) ? -0.5f * size : 0f);
+        Coordinate neighbor = new Coordinate(verts[vertIndex].getX() + xShift, verts[vertIndex].getY() + yShift);
+        if (data.isEnabled(neighbor)) {
+            return true;
+        }
+        
         int childIndex;
         QuadSquare current = this;
         LinkedList<Integer> opposites = new LinkedList<>();
@@ -84,15 +112,82 @@ public class QuadSquare {
             current = current.parent;
         } while (((vertIndex - childIndex) & 2) == 0);
         
-        /*QuadSquare child;
+        QuadSquare child;
         while (!opposites.isEmpty()) {
-            child = current.children[opposites.pop()];
-            if (child == null && ) {
-                current = child;
+            childIndex = opposites.pop();
+            child = current.children[childIndex];
+            if (opposites.size() == 1) {
+                if (child == null) {
+                    int localX = ((childIndex % 3) == 0) ? 1 : -1;
+                    int localY = ((childIndex & 2) == 0) ? 1 : -1;
+                    Coordinate center = new Coordinate(corners[1].getX() + localX * 0.25f * size, corners[1].getY() + localY * 0.25f * size);
+                    if (data.connectChild(center)) {
+                        if (current.subdivide(childIndex)) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    if (current.subdivide(childIndex)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
             } else {
-                data.create
+                current = child;
             }
-        }*/ return true;
+        }
+        throw new IllegalStateException("That is weird");
+    }
+    
+    public void update(float x, float y, float z) {
+        for (int i = 0; i < verts.length - 1; i++) {
+            if (data.getError(verts[i]) * DETAIL_THRESHOLD > distance(x, y, z, verts[i].getX(), verts[i].getY(), data.getHeight(verts[i]))) {
+                if (subdivideNeighbor(i)) {
+                    data.setEnabled(verts[i], true);
+                }
+            }
+        }
+        
+        for (int i = 0; i < children.length; i++) {
+            if (children[i].maxError * DETAIL_THRESHOLD > distance(x, y, z, children[i].errorVert.getX(), children[i].errorVert.getY(), data.getHeight(children[i].errorVert))) {
+                if (subdivide(i)) {
+                    children[i].update(x, y, z);
+                }
+            }
+        }
+    }
+    
+    public void render(Group buffer) {
+        ArrayList<Integer> cornersToRender = new ArrayList<>();
+        for (int i = 0; i < children.length; i++) {
+            int localX = ((i % 3) == 0) ? 1 : -1;
+            int localY = ((i & 2) == 0) ? 1 : -1;
+            Coordinate center = new Coordinate(corners[1].getX() + localX * 0.25f * size, corners[1].getY() + localY * 0.25f * size);
+            if (data.isEnabled(center)) {
+                children[i].render(buffer);
+            } else {
+                cornersToRender.add(i);
+            }
+        }
+        for (int i = 0; i < cornersToRender.size(); i++) {
+            int next = (i+1) % 3;
+            int prev = (i-1) % 3;
+            if (cornersToRender.get(i) == cornersToRender.get(prev) + 1) {
+                
+            }
+        }
+    }
+    
+    public float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+        float xDiff = x2 - x1;
+        float yDiff = y2 - y1;
+        float zDiff = z2 - z1;
+        return (float)Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff); 
     }
     
     private class SharedData {
@@ -115,11 +210,21 @@ public class QuadSquare {
             vertices = new ConcurrentHashMap<>();
         }
         
-        boolean childLoading(Coordinate center) {
+        void load(Coordinate center, QuadSquare parent, int index) {
+            Task<QuadSquare> task = new Task<QuadSquare>(){
+                @Override
+                protected QuadSquare call() throws Exception {
+                    return new QuadSquare(parent, index);
+                }
+            };
+            quadSquareBuffer.put(center, task);
+        }
+        
+        boolean isLoading(Coordinate center) {
             return quadSquareBuffer.containsKey(center);
         }
         
-        boolean addLoadedChild(Coordinate center) {
+        boolean connectChild(Coordinate center) {
             Task<QuadSquare> task = quadSquareBuffer.get(center);
             if (task != null && task.getState().equals(Worker.State.SUCCEEDED)) {
                 QuadSquare child = task.getValue();
@@ -173,8 +278,8 @@ public class QuadSquare {
             return vertices.get(c).getError();
         }
         
-        float isEnabled(Coordinate c) {
-            return vertices.get(c).getError();
+        boolean isEnabled(Coordinate c) {
+            return vertices.get(c).isEnabled();
         }
         
         void setEnabled(Coordinate c, boolean enabled) {
