@@ -44,6 +44,7 @@ public class Noise2D {
     private ArrayList<NoiseLayer> noiseLayers;
     
     public Noise2D(long seed) {
+        noiseLayers = new ArrayList<>();
         Random r = new Random(seed);
         perm = Arrays.copyOf(SUPPLY, 2 * SUPPLY_LENGTH);
         for (int i = 0; i < SUPPLY_LENGTH; i++) {
@@ -118,8 +119,12 @@ public class Noise2D {
         return NORMALIZE_FACTOR * (n0 + n1 + n2);
     }
     
-    public void addNoiseLayer(double amplitude, double frequency, String expression) {
+    public void addNoiseLayer() {
         noiseLayers.add(new NoiseLayer());
+    }
+    
+    public void addNoiseLayer(double amplitude, double frequency, String expression) {
+        noiseLayers.add(new NoiseLayer(amplitude, frequency, expression));
     }
     
     public void setAmplitude(int index, double amplitude) {
@@ -142,9 +147,6 @@ public class Noise2D {
         return value;
     }
     
-    
-
-    
     private class NoiseLayer {
         double amplitude;
         double frequency;
@@ -154,6 +156,13 @@ public class Noise2D {
             amplitude = 0;
             frequency = 0;
             this.expression = new Expression(NOISE_GRAMMAR);
+        }
+        
+        public NoiseLayer(double amplitude, double frequency, String expression) {
+            this.amplitude = amplitude;
+            this.frequency = frequency;
+            this.expression = new Expression(NOISE_GRAMMAR);
+            this.expression.buildExpression(expression);
         }
         
         public void setAmplitude(double amplitude) {

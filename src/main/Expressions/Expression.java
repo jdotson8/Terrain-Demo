@@ -33,7 +33,6 @@ public class Expression {
         String popped; 
         main:
         for (int i = 0; i < components.length; i++) {
-            System.out.println(components[i]);
             if (components[i].equals("(")) {
                 evaluable.push(components[i]);
             } else if (components[i].equals(",") || components[i].equals(")")) {
@@ -129,10 +128,8 @@ public class Expression {
                     }
                 }
                 if (!o1.isBinary()) {
-                    System.out.println("Unary Operator Added");
                     evaluable.push("u_" + o1.getSymbol());
                 } else {
-                    System.out.println("Binary Operator Added");
                     evaluable.push("b_" + o1.getSymbol());
                 }
                 if (o2 != null) {
@@ -145,7 +142,6 @@ public class Expression {
             } else if (grammar.containsFunction(components[i]) && i < components.length - 1 && components[i+1].equals("(")) {
                 evaluable.push(components[i]);
             } else if (grammar.containsVariable(components[i])) {
-                System.out.println("Variable added");
                 evaluated.push(new VariableNode(components[i], values));
             } else if (components[i].matches("\\d+(\\.\\d+)?")) {
                 evaluated.push(new NumberNode(Double.parseDouble(components[i])));

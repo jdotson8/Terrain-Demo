@@ -18,6 +18,10 @@ import javafx.collections.ObservableFloatArray;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.scene.Group;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 
 /**
@@ -25,10 +29,11 @@ import javafx.scene.shape.TriangleMesh;
  * @author Administrator
  */
 public class QuadSquare {
-    private static final float DETAIL_THRESHOLD = 1;
+    private static final float DETAIL_THRESHOLD = 5;
+    private static final Random R = new Random();
     private SharedData data; 
     private QuadSquare parent;
-    private QuadSquare[] children;
+    private QuadSquare[] children = new QuadSquare[4];
     private Coordinate[] corners = new Coordinate[4];
     private Coordinate[] verts = new Coordinate[5];
     private float maxError;
@@ -37,6 +42,37 @@ public class QuadSquare {
     private float size;
     private boolean subdivided;
     private boolean enabled;
+    
+    public QuadSquare(float initSize, Noise2D noise) {
+        data = new SharedData(noise);
+        size = initSize;
+        
+        corners[0] = new Coordinate(0.5f * size, 0.5f * size);
+        corners[1] = new Coordinate(-0.5f * size, 0.5f * size);
+        corners[2] = new Coordinate(-0.5f * size, -0.5f * size);
+        corners[3] = new Coordinate(0.5f * size, -0.5f * size);
+        
+        verts[0] = new Coordinate(0.5f * size, 0f);
+        verts[1] = new Coordinate(0f, 0.5f * size);
+        verts[2] = new Coordinate(-0.5f * size, 0f);
+        verts[3] = new Coordinate(0f, -0.5f * size);
+        verts[4] = new Coordinate(0f, 0f);
+        
+        for (int i = 0; i < corners.length; i++) {
+            data.addVertex(corners[i], 0);
+        }
+        
+        float error;
+        for (int i = 0; i < verts.length; i++) {
+            error = data.addVertex(verts[i], i);
+            if (error > maxError) {
+                maxError = error;
+                errorVert = verts[i];
+            }
+        }
+        subdivide();
+        enabled = true;
+    }
     
     public QuadSquare(QuadSquare parent, int index) {
         data = parent.data;
@@ -56,16 +92,17 @@ public class QuadSquare {
             }
         }
 
-        verts[0] = new Coordinate(corners[1].getX() + size, corners[1].getY() + 0.5f * size);
+        verts[0] = new Coordinate(corners[1].getX() + size, corners[1].getY() - 0.5f * size);
         verts[1] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY());
-        verts[2] = new Coordinate(corners[1].getX(), corners[1].getY() + 0.5f * size);
-        verts[3] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() + size);
-        verts[4] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() + 0.5f * size);
+        verts[2] = new Coordinate(corners[1].getX(), corners[1].getY() - 0.5f * size);
+        verts[3] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() - size);
+        verts[4] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() - 0.5f * size);
         
         float error;
         for (int i = 0; i < verts.length; i++) {
-            error = data.addVertex(verts[i]);
+            System.out.println(error = data.addVertex(verts[i], i));
             if (error > maxError) {
+                maxError = error;
                 errorVert = verts[i];
             }
         }   
@@ -86,13 +123,12 @@ public class QuadSquare {
             children[childIndex].subdivide();
         }
         
-        if (data.isEnabled(children[childIndex].verts[0])) {
-            enabled = true;
+        if (children[childIndex].enabled) {
             return true;
-        } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 3)) {
+        } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 4)) {
             data.setEnabled(verts[childIndex], true);
-            data.setEnabled(verts[(childIndex + 1) % 3], true);
-            data.setEnabled(children[childIndex].verts[0], true);
+            data.setEnabled(verts[(childIndex + 1) % 4], true);
+            data.setEnabled(children[childIndex].verts[4], true);
             children[childIndex].enabled = true;
             return true;
         } else {
@@ -118,33 +154,29 @@ public class QuadSquare {
         do {
             childIndex = current.index;
             opposites.push((childIndex ^ 1) ^ ((vertIndex & 1) << 1));
-            current = current.parent;
+            if (current.parent != null) {
+                current = current.parent;
+            } else {
+                return true;
+            }
         } while (((vertIndex - childIndex) & 2) == 0);
         
         QuadSquare child;
         while (!opposites.isEmpty()) {
             childIndex = opposites.pop();
             child = current.children[childIndex];
-            if (opposites.size() == 1) {
+            if (opposites.size() == 0) {
                 if (child == null) {
                     int localX = ((childIndex % 3) == 0) ? 1 : -1;
                     int localY = ((childIndex & 2) == 0) ? 1 : -1;
-                    Coordinate center = new Coordinate(corners[1].getX() + localX * 0.25f * size, corners[1].getY() + localY * 0.25f * size);
+                    Coordinate center = new Coordinate(current.verts[4].getX() + localX * 0.25f * size, current.verts[4].getY() + localY * 0.25f * size);
                     if (data.connectChild(center)) {
-                        if (current.enableChild(childIndex)) {
-                            return true;
-                        } else {
-                            return false;
-                        }
+                        return current.enableChild(childIndex);
                     } else {
                         return false;
                     }
                 } else {
-                    if (current.enableChild(childIndex)) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return current.enableChild(childIndex);
                 }
             } else {
                 current = child;
@@ -192,22 +224,24 @@ public class QuadSquare {
     public void render(Group terrain) {
         boolean connectPoints = false;
         TriangleMesh squareMesh = new TriangleMesh();
+        squareMesh.getTexCoords().addAll(0f, 0f);
         ObservableFloatArray points = squareMesh.getPoints();
         points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
         for (int i = 0; i < 4; i++) {
-            if (children[i].enabled) {
+            if (children[i] != null && children[i].enabled) {
                 children[i].render(terrain);
                 connectPoints = false;
-                if (children[(i + 1) % 4].enabled && data.isEnabled(verts[(i + 1) % 3])) {
+                if (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled) {
                     points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                    int last = (points.size() / 3) - 1;
-                    squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
                     connectPoints = true;
                 }
             } else {
-                if (connectPoints) {
-                    points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
+                points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
+                if (!connectPoints) {
                     connectPoints = true;
+                } else {
+                    int last = (points.size() / 3) - 1;
+                    squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
                 }
                 if (data.isEnabled(verts[(i + 1) % 4])) {
                     points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
@@ -215,11 +249,16 @@ public class QuadSquare {
                     squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
                 }
             }
-            if (data.isEnabled(verts[(i + 1) % 4])) {
-                points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                int last = (points.size() / 3) - 1;
-                squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
-            }
+        }
+        if (children[0] == null || !children[0].enabled) {
+            squareMesh.getFaces().addAll(0, 0, (points.size() / 3) - 1, 0, 1, 0);
+        }
+        
+        if (points.size() > 3) {
+            MeshView meshView = new MeshView(squareMesh);
+            meshView.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
+            meshView.setDrawMode(DrawMode.LINE);
+            terrain.getChildren().add(meshView);
         }
     }
     
@@ -245,8 +284,7 @@ public class QuadSquare {
         HashMap<Coordinate, Task<QuadSquare>> quadSquareBuffer = new HashMap<>();
         
         public SharedData(Noise2D noise) {
-            Random r = new Random();
-            noise = new Noise2D(r.nextLong());
+            this.noise = noise;
             vertices = new ConcurrentHashMap<>();
         }
         
@@ -258,6 +296,7 @@ public class QuadSquare {
                 }
             };
             quadSquareBuffer.put(center, task);
+            quadSquareLoader.submit(task);
         }
         
         boolean isChildLoading(Coordinate center) {
@@ -270,6 +309,7 @@ public class QuadSquare {
                 QuadSquare child = task.getValue();
                 if (child.parent != null) {
                     child.parent.children[child.index] = child;
+                    quadSquareBuffer.remove(center);
                     return true;
                 } else {
                     return false;
@@ -283,47 +323,55 @@ public class QuadSquare {
             return vertices.containsKey(c);
         }
         
-        float addVertex(Coordinate c) {
+        float addVertex(Coordinate c, int vertIndex) {
             VertexData vert = vertices.computeIfAbsent(c, key -> {
                 float height = (float)noise.getValue(key.getX(), key.getY());
                 float error = 0;
-                if (key.equals(verts[4])) {
-                    if ((index & 1) == 1) {
-                        error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
-                    } else {
-                        error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
-                    }
-                } else {
-                    for (int i = 0; i < 4; i++) {
-                        if (key.equals(verts[i])) {
-                            error = Math.abs(height - (getHeight(corners[(i-1)%4]) + getHeight(corners[i]))*0.5f);
-                            break;
+                switch (vertIndex) {
+                    case 4:
+                        if ((index & 1) == 1) {
+                            error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
+                        } else {
+                            error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
                         }
-                    }
+                        break;
+                    default:
+                        error = Math.abs(height - (getHeight(corners[(vertIndex+3)%4]) + getHeight(corners[vertIndex]))*0.5f);
+                        break;
                 }
                 return new VertexData(height, error);
             });
-            if (vert != null) {
-                return vert.getError();
-            } else {
-                return getError(c);
-            }
+            return vert.getError();
         }
         
         float getHeight(Coordinate c) {
-            return vertices.get(c).getHeight();
+            if (vertices.get(c) != null) {
+                return vertices.get(c).getHeight();
+            } else {
+                return 0f;
+            }
         }
         
         float getError(Coordinate c) {
-            return vertices.get(c).getError();
+            if (vertices.get(c) != null) {
+                return vertices.get(c).getError();
+            } else {
+                return 0f;
+            }
         }
         
         boolean isEnabled(Coordinate c) {
-            return vertices.get(c).isEnabled();
+            if (vertices.get(c) != null) {
+                return vertices.get(c).isEnabled();
+            } else {
+                return false;
+            }
         }
         
         void setEnabled(Coordinate c, boolean enabled) {
-            vertices.get(c).setEnabled(enabled);
+            if (vertices.get(c) != null) {
+                vertices.get(c).setEnabled(enabled);
+            }
         }
     }
 }

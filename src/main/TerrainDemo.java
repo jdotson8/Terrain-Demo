@@ -50,7 +50,7 @@ public class TerrainDemo extends Application {
         Coordinate c = new Coordinate(5f, 6f);
         Coordinate d = new Coordinate(5f, 5f);
         
-        ConcurrentHashMap<Coordinate, VertexData> test = new ConcurrentHashMap<>();
+                ConcurrentHashMap<Coordinate, VertexData> test = new ConcurrentHashMap<>();
         ExecutorService ex = Executors.newFixedThreadPool(5, new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable runnable) {
@@ -60,7 +60,7 @@ public class TerrainDemo extends Application {
                 return thread;
             }
         });
-        Task<Boolean> task1 = new Task<Boolean>() {
+        /*Task<Boolean> task1 = new Task<Boolean>() {
 
             @Override
             protected Boolean call() throws Exception {
@@ -76,7 +76,7 @@ public class TerrainDemo extends Application {
                 System.out.println("Finishing 1");
                 return true;
             }
-        };
+        };*/
         Task<Boolean> task2 = new Task<Boolean>() {
 
             @Override
@@ -98,9 +98,8 @@ public class TerrainDemo extends Application {
             }
             
         };
-        ex.submit(task1);
+        //ex.submit(task1);
         ex.submit(task2);
-        
         
         /*System.out.println(a.hashCode() == b.hashCode());
         System.out.println(a.hashCode() == c.hashCode());
@@ -114,6 +113,7 @@ public class TerrainDemo extends Application {
                 System.out.println(test2);
             }
         }*/
+        
     }
 
     /**
