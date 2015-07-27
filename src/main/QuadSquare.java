@@ -42,6 +42,7 @@ public class QuadSquare {
     private float size;
     private boolean subdivided;
     private boolean enabled;
+    private boolean isRoot;
     
     public QuadSquare(float initSize, Noise2D noise) {
         data = new SharedData(noise);
@@ -59,18 +60,23 @@ public class QuadSquare {
         verts[4] = new Coordinate(0f, 0f);
         
         for (int i = 0; i < corners.length; i++) {
-            data.addVertex(corners[i], 0);
+            data.addVertex(corners[i], null, null);
         }
         
         float error;
         for (int i = 0; i < verts.length; i++) {
-            error = data.addVertex(verts[i], i);
+            if (i == 4) {
+                error = data.addVertex(verts[i], null, null);
+            } else {
+                error = data.addVertex(verts[i], corners[i], corners[(i+3) % 4]);
+            }
             if (error > maxError) {
                 maxError = error;
                 errorVert = verts[i];
             }
         }
         subdivide();
+        isRoot = true;
         enabled = true;
     }
     
@@ -100,12 +106,16 @@ public class QuadSquare {
         
         float error;
         for (int i = 0; i < verts.length; i++) {
-            System.out.println(error = data.addVertex(verts[i], i));
+            if (i == 4) {
+                error = data.addVertex(verts[i], corners[index], corners[(index + 2) % 4]);
+            } else {
+                error = data.addVertex(verts[i], corners[i], corners[(i+3) % 4]);
+            }
             if (error > maxError) {
                 maxError = error;
                 errorVert = verts[i];
             }
-        }   
+        }
     }
     
     public void subdivide() {
@@ -256,7 +266,7 @@ public class QuadSquare {
         
         if (points.size() > 3) {
             MeshView meshView = new MeshView(squareMesh);
-            meshView.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
+            //meshView.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
             meshView.setDrawMode(DrawMode.LINE);
             terrain.getChildren().add(meshView);
         }
@@ -323,22 +333,29 @@ public class QuadSquare {
             return vertices.containsKey(c);
         }
         
-        float addVertex(Coordinate c, int vertIndex) {
+        float addVertex(Coordinate c, Coordinate firstCorner, Coordinate secondCorner) {
             VertexData vert = vertices.computeIfAbsent(c, key -> {
+                QuadSquare square = QuadSquare.this;
                 float height = (float)noise.getValue(key.getX(), key.getY());
-                float error = 0;
-                switch (vertIndex) {
-                    case 4:
-                        if ((index & 1) == 1) {
-                            error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
-                        } else {
-                            error = Math.abs(height - (getHeight(corners[1]) + getHeight(corners[3])) * 0.5f);
-                        }
-                        break;
-                    default:
-                        error = Math.abs(height - (getHeight(corners[(vertIndex+3)%4]) + getHeight(corners[vertIndex]))*0.5f);
-                        break;
+                
+                float error;
+                if (firstCorner != null && secondCorner != null) {
+                    error = Math.abs(height - (getHeight(firstCorner) + getHeight(secondCorner)) * 0.5f);
+                } else {
+                    error = 0;
                 }
+//                switch (vertIndex) {
+//                    case 4:
+//                        error = Math.abs(height - (getHeight(square.corners[square.index]) + getHeight(square.corners[(square.index + 2) % 4])) * 0.5f);
+//                        break;
+//                    default:
+//                        System.out.println("Corner Prev: " + square.corners[(vertIndex + 3)%4].getX() + " " + square.corners[(vertIndex + 3)%4].getY());
+//                        System.out.println("Corner Next: " + square.corners[vertIndex].getX() + " " + square.corners[vertIndex].getY());
+//                        System.out.println("Vert: " + key.getX() + " " + key.getY());
+//                        error = Math.abs(height - (getHeight(square.corners[(vertIndex + 3)%4]) + getHeight(square.corners[vertIndex])) * 0.5f);
+//                        System.out.println(error);
+//                        break;
+//                }
                 return new VertexData(height, error);
             });
             return vert.getError();

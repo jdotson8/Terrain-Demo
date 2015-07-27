@@ -160,6 +160,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
         Noise2D noise = new Noise2D(seed);
         noise.addNoiseLayer(20, 0.02, "x");
         noise.addNoiseLayer(5, 0.023, "x");
+        noise.addNoiseLayer(2, 0.3, "x");
+        noise.addNoiseLayer(1, 0.4, "x");
         test = new QuadSquare(100, noise);
         //noise.addNoiseLayer(15, 15, "x");
         //noise.addNoiseLayer(7, 7, "x");
@@ -219,7 +221,6 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
         }
         if (inputMap.get(KeyCode.R)) {
-            System.out.println("\nStarting next update:");
             test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             terrain.getChildren().clear();
             test.render(terrain);
