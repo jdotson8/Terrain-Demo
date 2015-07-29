@@ -32,7 +32,8 @@ import javafx.scene.shape.TriangleMesh;
  * @author Administrator
  */
 public class QuadSquare {
-    private static final float DETAIL_THRESHOLD = 20;
+    private static final float DETAIL_THRESHOLD = 10;
+    private static TriangleMesh EMPTY = new TriangleMesh();
     //private static final Random R = new Random();
     private SharedData data; 
     private QuadSquare parent;
@@ -45,7 +46,11 @@ public class QuadSquare {
     private float size;
     private boolean subdivided;
     private boolean enabled;
+     boolean isDirty;
     private int level;
+    
+    private Group meshGroup;
+    private MeshView mesh;
     
     public QuadSquare(float initSize, Noise2D noise) {
         data = new SharedData(noise);
@@ -81,6 +86,11 @@ public class QuadSquare {
         }
         subdivide();
         enabled = true;
+        isDirty = true;
+        mesh = new MeshView(EMPTY);
+        mesh.setDrawMode(DrawMode.LINE);
+        meshGroup = new Group();
+        meshGroup.getChildren().add(mesh);
     }
     
     public QuadSquare(QuadSquare parent, int index) {
@@ -108,8 +118,6 @@ public class QuadSquare {
         verts[3] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() - size);
         verts[4] = new Coordinate(corners[1].getX() + 0.5f * size, corners[1].getY() - 0.5f * size);
         
-        String debug = "";
-        boolean showDebug = false;
         float error;
         for (int i = 0; i < verts.length; i++) {
             if (i == 4) {
@@ -119,32 +127,19 @@ public class QuadSquare {
             }
             if (error > maxError) {
                 errorVert = verts[i];
-//                if (maxError > 0 && error >= 100 * maxError){
-//                    showDebug = true;
-//                    System.out.println("Corner 1: " + data.noise.getValue(corners[i].getX(), corners[i].getY()) + " " + data.getHeight(corners[i]));
-//                    System.out.println("Corner 2: " + data.noise.getValue(corners[(i+1) % 4].getX(), corners[(i+1) % 4].getY()) + " " + data.getHeight(corners[(i+1) % 4]));
-//                    System.out.println("Corner 3: " + data.noise.getValue(corners[(i+2) % 4].getX(), corners[(i+2) % 4].getY()) + " " + data.getHeight(corners[(i+2) % 4]));
-//                    System.out.println("Corner 4: " + data.noise.getValue(corners[(i+3) % 4].getX(), corners[(i+3) % 4].getY()) + " " + data.getHeight(corners[(i+3) % 4]));
-//                    System.out.println(data.noise.getValue(errorVert.getX(), errorVert.getY()) + " " + data.getHeight(errorVert));
-//                    System.out.println("Error: " + error);
-//                    TerrainController.update = false;
-//                    QuadSquare current = this;
-//                    do {
-//                        current = current.parent;
-//                        debug += current.maxError + " ";
-//                    }
-//                    while (current.parent != null);
-////                    System.out.println("Level: " + level);
-////                    System.out.println(errorVert.getX() + " " + errorVert.getY() + " " + data.getHeight(errorVert));
-////                    System.out.println("Error: " + error);
-//                }
                 maxError = error;
             }
         }
-        if (showDebug) {
-            System.out.println(debug);
-        }
-       
+        
+        isDirty = true;
+        mesh = new MeshView(EMPTY);
+        mesh.setDrawMode(DrawMode.LINE);
+        meshGroup = new Group();
+        meshGroup.getChildren().add(mesh);
+    }
+    
+    public Group getMeshGroup() {
+        return meshGroup;
     }
     
     public void subdivide() {
@@ -165,6 +160,7 @@ public class QuadSquare {
         if (children[childIndex].enabled) {
             return true;
         } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 4)) {
+            children[childIndex].markDirty();
             data.setEnabled(verts[childIndex], true);
             data.setEnabled(verts[(childIndex + 1) % 4], true);
             data.setEnabled(children[childIndex].verts[4], true);
@@ -224,6 +220,15 @@ public class QuadSquare {
         throw new IllegalStateException("That is weird");
     }
     
+    public void markDirty() {
+        isDirty = true;
+        QuadSquare current = this;
+        while (current.parent != null && !current.parent.isDirty) {
+            current = current.parent;
+            current.isDirty = true;
+        }
+    }
+    
     public void update(float x, float y, float z) {
         if (!TerrainController.update) {
             return;
@@ -233,6 +238,9 @@ public class QuadSquare {
             dist = distance(x, y, z, verts[i]);
             if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
                 if (enableVertexNeighbor(i)) {
+//                    if (data.isEnabled(verts[i])) {
+//                        //markDirty();
+//                    }
                     data.setEnabled(verts[i], true);
                 }
             }
@@ -250,10 +258,6 @@ public class QuadSquare {
                     }
                 }
                 if (!children[i].enabled) {
-                    if (children[i].errorVert == null) {
-                        TerrainController.update = false;
-                        return;
-                    }
                     dist = distance(x, y, z, children[i].errorVert);
                     if (children[i].maxError * DETAIL_THRESHOLD > dist) {
                         if (enableChild(i)) {
@@ -267,44 +271,45 @@ public class QuadSquare {
         }
     }
     
-    public void render(Group terrain) {
-        boolean connectPoints = false;
-        TriangleMesh squareMesh = new TriangleMesh();
-        squareMesh.getTexCoords().addAll(0f, 0f);
-        ObservableFloatArray points = squareMesh.getPoints();
-        points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
-        for (int i = 0; i < 4; i++) {
-            if (children[i] != null && children[i].enabled) {
-                children[i].render(terrain);
-                connectPoints = false;
-                if (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled) {
-                    points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                    connectPoints = true;
-                }
-            } else {
-                points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
-                if (!connectPoints) {
-                    connectPoints = true;
+    public void render() {
+        if (isDirty) {
+            boolean connectPoints = false;
+            TriangleMesh squareMesh = new TriangleMesh();
+            squareMesh.getTexCoords().addAll(0f, 0f);
+            ObservableFloatArray points = squareMesh.getPoints();
+            points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
+            for (int i = 0; i < 4; i++) {
+                if (children[i] != null && children[i].enabled) {
+                    children[i].render();
+                    connectPoints = false;
+                    if (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        connectPoints = true;
+                    }
                 } else {
-                    int last = (points.size() / 3) - 1;
-                    squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
-                }
-                if (data.isEnabled(verts[(i + 1) % 4])) {
-                    points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                    int last = (points.size() / 3) - 1;
-                    squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
+                    points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
+                    if (!connectPoints) {
+                        connectPoints = true;
+                    } else {
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
+                    }
+                    if (data.isEnabled(verts[(i + 1) % 4])) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
+                    }
                 }
             }
-        }
-        if (children[0] == null || !children[0].enabled) {
-            squareMesh.getFaces().addAll(0, 0, (points.size() / 3) - 1, 0, 1, 0);
-        }
-        
-        if (points.size() > 3) {
-            MeshView meshView = new MeshView(squareMesh);
-            //meshView.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
-            meshView.setDrawMode(DrawMode.LINE);
-            terrain.getChildren().add(meshView);
+            if (children[0] == null || !children[0].enabled) {
+                squareMesh.getFaces().addAll(0, 0, (points.size() / 3) - 1, 0, 1, 0);
+            }
+            if (points.size() > 3) {
+                mesh.setMesh(squareMesh);
+            } else if (mesh != null) {
+                mesh.setMesh(EMPTY);
+            }
+            isDirty = false;
         }
     }
     
@@ -355,6 +360,7 @@ public class QuadSquare {
                 QuadSquare child = task.getValue();
                 if (child.parent != null) {
                     child.parent.children[child.index] = child;
+                    child.parent.meshGroup.getChildren().add(child.meshGroup);
                     quadSquareBuffer.remove(center);
                     return true;
                 } else {
@@ -375,16 +381,9 @@ public class QuadSquare {
                 float error;
                 if (firstCorner != null && secondCorner != null) {
                     error = Math.abs(height - (getHeight(firstCorner) + getHeight(secondCorner)) * 0.5f);
-                    //if (error == 0) {System.out.println(getHeight(firstCorner) + " " + height + " " + getHeight(secondCorner));}
                 } else {
-                    System.out.println("Hello");
                     error = 0;
                 }
-//                try {
-//                    Thread.sleep(60);
-//                } catch (Exception e) {
-//                    System.out.println("error");
-//                }
                 return new VertexData(height, error);
             });
             return vert.getError();

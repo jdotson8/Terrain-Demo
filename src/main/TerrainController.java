@@ -69,6 +69,9 @@ public class TerrainController extends AnimationTimer implements Initializable {
     private int frameTimeIndex = 0 ;
     private boolean arrayFilled = false ;
     public static boolean update = true;
+    
+    TriangleMesh mesh;
+    Random r = new Random();
 
 
     /**
@@ -78,11 +81,13 @@ public class TerrainController extends AnimationTimer implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         terrainView = new SubScene(root, 640, 480, true, SceneAntialiasing.BALANCED);
         mainPane.getChildren().add(terrainView);
-        registerKey(KeyCode.W);
-        registerKey(KeyCode.A);
-        registerKey(KeyCode.S);
-        registerKey(KeyCode.D);
-        registerKey(KeyCode.R);
+        inputMap.put(KeyCode.W, false);
+        inputMap.put(KeyCode.A, false);
+        inputMap.put(KeyCode.S, false);
+        inputMap.put(KeyCode.D, false);
+        inputMap.put(KeyCode.R, false);
+        inputMap.put(KeyCode.SHIFT, false);
+        inputMap.put(KeyCode.SPACE, false);
         initInputMap(terrainView);
         initView();
         buildTest();
@@ -117,7 +122,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
             double oldMousePosY = mousePosY;
             mousePosX = event.getSceneX();
             mousePosY = event.getSceneY();
-            yaw.set(yaw.get() + CAMERA_ROTATE_SPEED * (mousePosX - oldMousePosX));
+            yaw.set(yaw.get() - CAMERA_ROTATE_SPEED * (mousePosX - oldMousePosX));
             pitch.set(pitch.get() - CAMERA_ROTATE_SPEED * (mousePosY - oldMousePosY));
         });
     }
@@ -130,28 +135,28 @@ public class TerrainController extends AnimationTimer implements Initializable {
         camera.setFarClip(1000);
         terrainView.setCamera(camera);
         
-        pitch = new SimpleDoubleProperty(0);
+        pitch = new SimpleDoubleProperty(Math.toRadians(-90));
         yaw = new SimpleDoubleProperty(0);
         cameraX = new SimpleDoubleProperty(0);
         cameraY = new SimpleDoubleProperty(0);
-        cameraZ = new SimpleDoubleProperty(300);
+        cameraZ = new SimpleDoubleProperty(50);
         
-        TransformLayer cameraTransform = new TransformLayer(RotateOrder.ZYX);
+        TransformLayer cameraTransform = new TransformLayer();
         cameraTransform.rxProperty().bind(new DoubleBinding() {
             {super.bind(pitch);}
 
             @Override
             protected double computeValue() {
-                return 180 + Math.toDegrees(pitch.get());
+                return 270 + Math.toDegrees(pitch.get());
             }
             
         });
-        cameraTransform.ryProperty().bind(new DoubleBinding() {
+        cameraTransform.rzProperty().bind(new DoubleBinding() {
             {super.bind(yaw);}
 
             @Override
             protected double computeValue() {
-                return Math.toDegrees(yaw.get());
+                return Math.toDegrees(yaw.get()) - 90;
             }
             
         });
@@ -176,7 +181,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
         noise.addNoiseLayer(1, 0.4, "x");
         noise.addNoiseLayer(0.5, 0.2, "x");
         test = new QuadSquare(50, noise);
-        TriangleMesh mesh = new TriangleMesh();
+        terrain.getChildren().add(test.getMeshGroup());
+        mesh = new TriangleMesh();
         mesh.getTexCoords().addAll(0f, 0f);
         for (int i = -50; i < 50; i++) {
             for (int j = -50; j < 50; j++) {
@@ -194,50 +200,55 @@ public class TerrainController extends AnimationTimer implements Initializable {
         root.getChildren().add(terrain);
         MeshView brute = new MeshView(mesh);
         brute.setMaterial(new PhongMaterial(Color.RED));
-        brute.setDrawMode(DrawMode.LINE);
+        //brute.setDrawMode(DrawMode.LINE);
         //root.getChildren().add(brute);
-        /*for (int i = 0; i < 50; i += 2) {
-            for (int j = 0; j < 50; j += 2) {
-                Sphere sphere = new Sphere(0.5, 10);
-                sphere.setTranslateX(i);
-                sphere.setTranslateY(j);
-                sphere.setTranslateZ(-10);
-                root.getChildren().add(sphere);
-            }
-        }*/
+//        for (int i = 0; i < 50; i += 2) {
+//            for (int j = 0; j < 20; j += 2) {
+//                Sphere sphere = new Sphere(0.5, 10);
+//                sphere.setTranslateX(i);
+//                sphere.setTranslateY(j);
+//                sphere.setTranslateZ(-10);
+//                root.getChildren().add(sphere);
+//            }
+//        }
     }
 
     @Override
     public void handle(long now) {
         if (inputMap.get(KeyCode.W)) {
-            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
-            cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
-            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
+            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
+            cameraY.set(cameraY.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
+            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
         }
         if (inputMap.get(KeyCode.S)) {
-            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
-            cameraY.set(cameraY.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
-            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
+            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.cos(yaw.get())));
+            cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(pitch.get()) * Math.sin(yaw.get())));
+            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(pitch.get())));
         }
         if (inputMap.get(KeyCode.A)) {
-            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get() + Math.PI / 2)));
-            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
+            cameraX.set(cameraX.get() - CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get())));
+            cameraY.set(cameraY.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get())));
         }
         if (inputMap.get(KeyCode.D)) {
-            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get() + Math.PI / 2)));
-            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
+            cameraX.set(cameraX.get() + CAMERA_TRANSLATE_SPEED * (Math.sin(yaw.get())));
+            cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get())));
+        }
+        if (inputMap.get(KeyCode.SHIFT)) {
+            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
+        }
+        if (inputMap.get(KeyCode.SPACE)) {
+            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            terrain.getChildren().clear();
-            test.render(terrain);
+            test.render();
             inputMap.put(KeyCode.R, false);
         }
-        if (update) {
-            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            terrain.getChildren().clear();
-            test.render(terrain);
-        }
+        test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+        test.render();
+//        for (int i = 0; i < mesh.getPoints().size(); i ++) {
+//            mesh.getPoints().set(i, 50 * r.nextFloat());
+//        }
         long oldFrameTime = frameTimes[frameTimeIndex] ;
         frameTimes[frameTimeIndex] = now ;
         frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length ;
