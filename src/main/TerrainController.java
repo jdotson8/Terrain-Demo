@@ -21,10 +21,12 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
@@ -44,7 +46,9 @@ public class TerrainController extends AnimationTimer implements Initializable {
     private static final double CAMERA_ROTATE_SPEED = 0.01;
 
     @FXML
-    private AnchorPane mainPane;
+    private Pane mainPane;
+    @FXML
+    private Label fpsLabel;
     
     private HashMap<KeyCode, Boolean> inputMap = new HashMap<>();
     private SubScene terrainView;
@@ -60,6 +64,12 @@ public class TerrainController extends AnimationTimer implements Initializable {
     
     private QuadSquare test;
     private Group terrain = new Group();
+    
+    private final long[] frameTimes = new long[100];
+    private int frameTimeIndex = 0 ;
+    private boolean arrayFilled = false ;
+    public static boolean update = true;
+
 
     /**
      * Initializes the controller class.
@@ -124,7 +134,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         yaw = new SimpleDoubleProperty(0);
         cameraX = new SimpleDoubleProperty(0);
         cameraY = new SimpleDoubleProperty(0);
-        cameraZ = new SimpleDoubleProperty(150);
+        cameraZ = new SimpleDoubleProperty(300);
         
         TransformLayer cameraTransform = new TransformLayer(RotateOrder.ZYX);
         cameraTransform.rxProperty().bind(new DoubleBinding() {
@@ -157,24 +167,22 @@ public class TerrainController extends AnimationTimer implements Initializable {
         Random r = new Random();
         long seed = r.nextLong();
         System.out.println("Seed: " + seed);
-        Noise2D noise = new Noise2D(seed);
+        Noise2D noise = new Noise2D(-4402001516981054855L);
+        Noise2D noise2 = new Noise2D(seed);
         noise.addNoiseLayer(20, 0.02, "x");
+        noise2.addNoiseLayer(20, 0.02, "x");
         noise.addNoiseLayer(5, 0.023, "x");
         noise.addNoiseLayer(2, 0.3, "x");
         noise.addNoiseLayer(1, 0.4, "x");
-        test = new QuadSquare(100, noise);
-        //noise.addNoiseLayer(15, 15, "x");
-        //noise.addNoiseLayer(7, 7, "x");
-        //System.out.println(noise.getValue(0,0));
+        noise.addNoiseLayer(0.5, 0.2, "x");
+        test = new QuadSquare(50, noise);
         TriangleMesh mesh = new TriangleMesh();
         mesh.getTexCoords().addAll(0f, 0f);
         for (int i = -50; i < 50; i++) {
             for (int j = -50; j < 50; j++) {
-                mesh.getPoints().addAll(i, j, (float)noise.getValue(i, j));
+                mesh.getPoints().addAll(i, j, (float)noise2.getValue(i, j));
             }
         }
-        //mesh.getPoints().addAll(0.0f, 0.0f, 0.0f, 50.0f, 50.0f, 0.0f, -50.0f, 50.0f, 0.0f);//, -50.0f, -50.0f, 0.0f, 50.0f, -50.0f, 0.0f);
-        //mesh.getFaces().addAll(0, 0, 1, 0, 2, 0);//, 0, 0, 2, 0, 3, 0, 0, 0, 3, 0, 4, 0, 0, 0, 4, 0, 1, 0);
         
         for (int i = 0; i < 99; i++) {
             for (int j = 0; j < 99; j++) {
@@ -183,7 +191,6 @@ public class TerrainController extends AnimationTimer implements Initializable {
             }
         }
         
-        //test.render(terrain);
         root.getChildren().add(terrain);
         MeshView brute = new MeshView(mesh);
         brute.setMaterial(new PhongMaterial(Color.RED));
@@ -221,10 +228,27 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get() + Math.PI / 2)));
         }
         if (inputMap.get(KeyCode.R)) {
-            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             terrain.getChildren().clear();
             test.render(terrain);
             inputMap.put(KeyCode.R, false);
+        }
+        if (update) {
+            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+            terrain.getChildren().clear();
+            test.render(terrain);
+        }
+        long oldFrameTime = frameTimes[frameTimeIndex] ;
+        frameTimes[frameTimeIndex] = now ;
+        frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length ;
+        if (frameTimeIndex == 0) {
+            arrayFilled = true ;
+        }
+        if (arrayFilled) {
+            long elapsedNanos = now - oldFrameTime ;
+            long elapsedNanosPerFrame = elapsedNanos / frameTimes.length ;
+            double frameRate = 1_000_000_000.0 / elapsedNanosPerFrame ;
+            fpsLabel.setText(String.format("FPS: %.3f", frameRate));
         }
     }
 }

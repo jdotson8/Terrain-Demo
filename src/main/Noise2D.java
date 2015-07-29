@@ -142,7 +142,7 @@ public class Noise2D {
     public double getValue(double x, double y) {
         double value = 0;
         for (NoiseLayer layer : noiseLayers) {
-            value += layer.getValue(x, y);
+            value += layer.amplitude * sample(layer.frequency * x, layer.frequency * y);
         }
         return value;
     }

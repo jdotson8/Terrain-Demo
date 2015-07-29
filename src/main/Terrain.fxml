@@ -6,4 +6,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane id="AnchorPane" fx:id="mainPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.TerrainController" />
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.TerrainController">
+   <children>
+      <Pane fx:id="mainPane" prefHeight="400.0" prefWidth="600.0" />
+      <Label fx:id="fpsLabel" layoutX="14.0" layoutY="14.0" text="FPS" textFill="WHITE" />
+   </children>
+</AnchorPane>
