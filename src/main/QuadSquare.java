@@ -32,7 +32,7 @@ import javafx.scene.shape.TriangleMesh;
  * @author Administrator
  */
 public class QuadSquare {
-    private static final float DETAIL_THRESHOLD = 10;
+    private static final float DETAIL_THRESHOLD = 50;
     private static TriangleMesh EMPTY = new TriangleMesh();
     //private static final Random R = new Random();
     private SharedData data; 
@@ -88,7 +88,7 @@ public class QuadSquare {
         enabled = true;
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        mesh.setDrawMode(DrawMode.LINE);
+        //mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -133,7 +133,7 @@ public class QuadSquare {
         
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        mesh.setDrawMode(DrawMode.LINE);
+        //mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -158,6 +158,7 @@ public class QuadSquare {
         }
         
         if (children[childIndex].enabled) {
+            children[childIndex].markDirty();
             return true;
         } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 4)) {
             children[childIndex].markDirty();
@@ -176,12 +177,12 @@ public class QuadSquare {
             return true;
         }
         
-        float xShift = (vertIndex == 0) ? 0.5f * size : ((vertIndex == 2) ? -0.5f * size : 0f);
-        float yShift = (vertIndex == 1) ? 0.5f * size : ((vertIndex == 3) ? -0.5f * size : 0f);
-        Coordinate neighbor = new Coordinate(verts[vertIndex].getX() + xShift, verts[vertIndex].getY() + yShift);
-        if (data.isEnabled(neighbor)) {
-            return true;
-        }
+//        float xShift = (vertIndex == 0) ? 0.5f * size : ((vertIndex == 2) ? -0.5f * size : 0f);
+//        float yShift = (vertIndex == 1) ? 0.5f * size : ((vertIndex == 3) ? -0.5f * size : 0f);
+//        Coordinate neighbor = new Coordinate(verts[vertIndex].getX() + xShift, verts[vertIndex].getY() + yShift);
+//        if (data.isEnabled(neighbor)) {
+//            return true;
+//        }
         
         int childIndex;
         QuadSquare current = this;
@@ -237,10 +238,8 @@ public class QuadSquare {
         for (int i = 0; i < verts.length - 1; i++) {
             dist = distance(x, y, z, verts[i]);
             if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
-                if (enableVertexNeighbor(i)) {
-//                    if (data.isEnabled(verts[i])) {
-//                        //markDirty();
-//                    }
+                if (!data.isEnabled(verts[i]) && enableVertexNeighbor(i)) {
+                    markDirty();
                     data.setEnabled(verts[i], true);
                 }
             }
@@ -293,16 +292,19 @@ public class QuadSquare {
                     } else {
                         int last = (points.size() / 3) - 1;
                         squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
+                        squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
                     }
                     if (data.isEnabled(verts[(i + 1) % 4])) {
                         points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
                         int last = (points.size() / 3) - 1;
                         squareMesh.getFaces().addAll(0, 0, last - 1, 0, last, 0);
+                        squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
                     }
                 }
             }
             if (children[0] == null || !children[0].enabled) {
                 squareMesh.getFaces().addAll(0, 0, (points.size() / 3) - 1, 0, 1, 0);
+                squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
             }
             if (points.size() > 3) {
                 mesh.setMesh(squareMesh);

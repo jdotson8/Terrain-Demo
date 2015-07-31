@@ -139,7 +139,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         yaw = new SimpleDoubleProperty(0);
         cameraX = new SimpleDoubleProperty(0);
         cameraY = new SimpleDoubleProperty(0);
-        cameraZ = new SimpleDoubleProperty(50);
+        cameraZ = new SimpleDoubleProperty(300);
         
         TransformLayer cameraTransform = new TransformLayer();
         cameraTransform.rxProperty().bind(new DoubleBinding() {
@@ -175,12 +175,12 @@ public class TerrainController extends AnimationTimer implements Initializable {
         Noise2D noise = new Noise2D(-4402001516981054855L);
         Noise2D noise2 = new Noise2D(seed);
         noise.addNoiseLayer(20, 0.02, "x");
-        noise2.addNoiseLayer(20, 0.02, "x");
-        noise.addNoiseLayer(5, 0.023, "x");
-        noise.addNoiseLayer(2, 0.3, "x");
-        noise.addNoiseLayer(1, 0.4, "x");
-        noise.addNoiseLayer(0.5, 0.2, "x");
-        test = new QuadSquare(50, noise);
+        //noise2.addNoiseLayer(20, 0.02, "x");
+        //noise.addNoiseLayer(5, 0.023, "x");
+        //noise.addNoiseLayer(2, 0.3, "x");
+        //noise.addNoiseLayer(1, 0.4, "x");
+        //noise.addNoiseLayer(0.5, 0.2, "x");
+        test = new QuadSquare(500, noise);
         terrain.getChildren().add(test.getMeshGroup());
         mesh = new TriangleMesh();
         mesh.getTexCoords().addAll(0f, 0f);
