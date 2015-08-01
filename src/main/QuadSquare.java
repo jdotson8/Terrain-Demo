@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import javafx.collections.ObservableFloatArray;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
+import javafx.event.EventType;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -34,7 +35,7 @@ import javafx.scene.shape.TriangleMesh;
 public class QuadSquare {
     private static final float DETAIL_THRESHOLD = 50;
     private static TriangleMesh EMPTY = new TriangleMesh();
-    //private static final Random R = new Random();
+    private static final Random R = new Random();
     private SharedData data; 
     private QuadSquare parent;
     private QuadSquare[] children = new QuadSquare[4];
@@ -88,7 +89,7 @@ public class QuadSquare {
         enabled = true;
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        //mesh.setDrawMode(DrawMode.LINE);
+        mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -133,7 +134,8 @@ public class QuadSquare {
         
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        //mesh.setDrawMode(DrawMode.LINE);
+        mesh.setDrawMode(DrawMode.LINE);
+        mesh.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -152,6 +154,23 @@ public class QuadSquare {
         subdivided = true;
     }
     
+    public void merge() {
+        meshGroup.getChildren().clear();
+        meshGroup.getChildren().add(mesh);
+        markDirty();
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] != null) {
+                children[i] = null;
+            } else {
+                int localX = ((i % 3) == 0) ? 1 : -1;
+                int localY = ((i & 2) == 0) ? 1 : -1;
+                Coordinate center = new Coordinate(verts[4].getX() + localX * 0.25f * size, verts[4].getY() + localY * 0.25f * size);
+                data.removeChild(center);
+            }
+        }
+        subdivided = false;
+    }
+    
     public boolean enableChild(int childIndex) {
         if (!children[childIndex].subdivided) {
             children[childIndex].subdivide();
@@ -165,10 +184,38 @@ public class QuadSquare {
             data.setEnabled(verts[childIndex], true);
             data.setEnabled(verts[(childIndex + 1) % 4], true);
             data.setEnabled(children[childIndex].verts[4], true);
+            data.incDependencyCount(verts[childIndex]);
+            data.incDependencyCount(verts[(childIndex + 1) % 4]);
             children[childIndex].enabled = true;
             return true;
         } else {
             return false;
+        }
+    }
+    
+    public void notifyVertexDisable(int vertIndex) {
+        int childIndex;
+        QuadSquare current = this;
+        LinkedList<Integer> opposites = new LinkedList<>();
+        do {
+            childIndex = current.index;
+            opposites.push((childIndex ^ 1) ^ ((vertIndex & 1) << 1));
+            if (current.parent != null) {
+                current = current.parent;
+            } else {
+                return;
+            }
+        } while (((vertIndex - childIndex) & 2) == 0);
+        
+        QuadSquare child;
+        while (!opposites.isEmpty()) {
+            childIndex = opposites.pop();
+            child = current.children[childIndex];
+            if (opposites.size() == 0) {
+                current.children[childIndex].markDirty();
+            } else {
+                current = child;
+            }
         }
     }
     
@@ -231,9 +278,6 @@ public class QuadSquare {
     }
     
     public void update(float x, float y, float z) {
-        if (!TerrainController.update) {
-            return;
-        }
         float dist;
         for (int i = 0; i < verts.length - 1; i++) {
             dist = distance(x, y, z, verts[i]);
@@ -242,6 +286,21 @@ public class QuadSquare {
                     markDirty();
                     data.setEnabled(verts[i], true);
                 }
+            } else if (data.isEnabled(verts[i]) && data.getDependencyCount(verts[i]) == 0) {
+                notifyVertexDisable(i);
+                markDirty();
+                data.setEnabled(verts[i], false);
+            }
+        }
+        
+        if (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3])) {
+            dist = distance(x, y, z, verts[4]);
+            if (data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
+                merge();
+                enabled = false;
+                data.decDependencyCount(corners[(index + 1) % 4]);
+                data.decDependencyCount(corners[(index + 3) % 4]);
+                data.setEnabled(verts[4], false);
             }
         }
         
@@ -352,6 +411,14 @@ public class QuadSquare {
             quadSquareLoader.submit(task);
         }
         
+        void removeChild(Coordinate center) {
+            Task<QuadSquare> task = quadSquareBuffer.get(center);
+            if (task != null) {
+                task.cancel();
+                quadSquareBuffer.remove(center);
+            }
+        }
+        
         boolean isChildLoading(Coordinate center) {
             return quadSquareBuffer.containsKey(center);
         }
@@ -419,6 +486,18 @@ public class QuadSquare {
             if (vertices.get(c) != null) {
                 vertices.get(c).setEnabled(enabled);
             }
+        }
+        
+        void incDependencyCount(Coordinate c) {
+            vertices.get(c).incDependencyCount();
+        }
+        
+        void decDependencyCount(Coordinate c) {
+            vertices.get(c).decDependencyCount();
+        }
+        
+        int getDependencyCount(Coordinate c) {
+            return vertices.get(c).getDependencyCount();
         }
     }
 }

@@ -13,6 +13,7 @@ public class VertexData {
     private float height;
     private float error;
     private boolean enabled;
+    private int dependencyCount;
     
     VertexData(float height, float error) {
         this.height = height;
@@ -38,5 +39,17 @@ public class VertexData {
     
     public boolean isEnabled() {
         return enabled;
+    }
+    
+    public int getDependencyCount() {
+        return dependencyCount;
+    }
+    
+    public void incDependencyCount() {
+        dependencyCount++;
+    }
+    
+    public void decDependencyCount() {
+        dependencyCount--;
     }
 }
