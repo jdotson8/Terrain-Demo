@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import javafx.collections.ObservableFloatArray;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
-import javafx.event.EventType;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -89,7 +88,7 @@ public class QuadSquare {
         enabled = true;
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        mesh.setDrawMode(DrawMode.LINE);
+        //mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -134,8 +133,8 @@ public class QuadSquare {
         
         isDirty = true;
         mesh = new MeshView(EMPTY);
-        mesh.setDrawMode(DrawMode.LINE);
-        mesh.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
+        //mesh.setDrawMode(DrawMode.LINE);
+        //mesh.setMaterial(new PhongMaterial(new Color(R.nextDouble(), R.nextDouble(), R.nextDouble(), 1)));
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -155,9 +154,10 @@ public class QuadSquare {
     }
     
     public void merge() {
-        meshGroup.getChildren().clear();
-        meshGroup.getChildren().add(mesh);
         markDirty();
+        meshGroup.getChildren().clear();
+        mesh.setMesh(EMPTY);
+        meshGroup.getChildren().add(mesh);
         for (int i = 0; i < children.length; i++) {
             if (children[i] != null) {
                 children[i] = null;

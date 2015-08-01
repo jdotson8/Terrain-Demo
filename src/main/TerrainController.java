@@ -42,7 +42,7 @@ import main.TransformLayer.RotateOrder;
  * @author Administrator
  */
 public class TerrainController extends AnimationTimer implements Initializable {
-    private static final double CAMERA_TRANSLATE_SPEED = 10;
+    private static final double CAMERA_TRANSLATE_SPEED = 1;
     private static final double CAMERA_ROTATE_SPEED = 0.01;
 
     @FXML
@@ -175,7 +175,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         Noise2D noise = new Noise2D(-4402001516981054855L);
         Noise2D noise2 = new Noise2D(seed);
         noise.addNoiseLayer(20, 0.005, "x");
-        //noise2.addNoiseLayer(20, 0.02, "x");
+        noise.addNoiseLayer(5, 0.03, "x");
         //noise.addNoiseLayer(5, 0.023, "x");
         //noise.addNoiseLayer(2, 0.3, "x");
         //noise.addNoiseLayer(1, 0.4, "x");
@@ -241,9 +241,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
         }
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-//            test.render();
+            //test.render();
 //            inputMap.put(KeyCode.R, false);
-            update = !update;
         }
         if (update) {
             test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
