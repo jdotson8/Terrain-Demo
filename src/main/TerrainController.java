@@ -179,14 +179,15 @@ public class TerrainController extends AnimationTimer implements Initializable {
         //noise.addNoiseLayer(5, 0.023, "x");
         //noise.addNoiseLayer(2, 0.3, "x");
         //noise.addNoiseLayer(1, 0.4, "x");
-        //noise.addNoiseLayer(0.5, 0.2, "x");
-        test = new QuadSquare(500, noise);
+        noise.addNoiseLayer(2, 0.05, "x");
+        noise.addNoiseLayer(1, 0.1, "x");
+        test = new QuadSquare(512, noise);
         terrain.getChildren().add(test.getMeshGroup());
         mesh = new TriangleMesh();
         mesh.getTexCoords().addAll(0f, 0f);
         for (int i = -50; i < 50; i++) {
             for (int j = -50; j < 50; j++) {
-                mesh.getPoints().addAll(i, j, (float)noise2.getValue(i, j));
+                mesh.getPoints().addAll(i, j, (float)noise.getValue(i, j));
             }
         }
         
@@ -240,13 +241,15 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.R)) {
-            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            //test.render();
-//            inputMap.put(KeyCode.R, false);
-        }
-        if (update) {
             test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             test.render();
+            //test.test();
+            //System.out.println(QuadSquare.squareCount);
+            inputMap.put(KeyCode.R, false);
+        }
+        if (update) {
+            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+            //test.render();
         }
 //        for (int i = 0; i < mesh.getPoints().size(); i ++) {
 //            mesh.getPoints().set(i, 50 * r.nextFloat());
