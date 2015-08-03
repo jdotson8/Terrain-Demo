@@ -241,14 +241,14 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.R)) {
-            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             test.render();
             //test.test();
             //System.out.println(QuadSquare.squareCount);
             inputMap.put(KeyCode.R, false);
         }
         if (update) {
-            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             //test.render();
         }
 //        for (int i = 0; i < mesh.getPoints().size(); i ++) {

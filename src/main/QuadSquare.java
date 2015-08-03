@@ -136,11 +136,11 @@ public class QuadSquare {
         isDirty = true;
         mesh = new MeshView(EMPTY);
         mesh.setDrawMode(DrawMode.LINE);
-        if (index == 0) {
-            mesh.setMaterial(new PhongMaterial(Color.BLUE));
-        } else if (index == 1) {
-            mesh.setMaterial(new PhongMaterial(Color.RED));
-        }
+//        if (index == 0) {
+//            mesh.setMaterial(new PhongMaterial(Color.BLUE));
+//        } else if (index == 1) {
+//            mesh.setMaterial(new PhongMaterial(Color.RED));
+//        }
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
     }
@@ -163,7 +163,7 @@ public class QuadSquare {
         markDirty();
         meshGroup.getChildren().clear();
         mesh.setMesh(EMPTY);
-        mesh.setMaterial(new PhongMaterial(new Color(R.nextFloat(), R.nextFloat(), R.nextFloat(), 1)));
+        //mesh.setMaterial(new PhongMaterial(new Color(R.nextFloat(), R.nextFloat(), R.nextFloat(), 1)));
         meshGroup.getChildren().add(mesh);
         for (int i = 0; i < children.length; i++) {
             if (children[i] != null) {
@@ -185,18 +185,14 @@ public class QuadSquare {
         
         if (children[childIndex].enabled) {
             children[childIndex].markDirty();
-            System.out.println("Square: " + level + " " + childIndex + " is already enabled.");
             return true;
         } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 4)) {
-            System.out.println("Square: " + level + " " + childIndex + " is now enabled.");
             children[childIndex].markDirty();
             data.setEnabled(verts[childIndex], true);
             data.setEnabled(verts[(childIndex + 1) % 4], true);
             data.setEnabled(children[childIndex].verts[4], true);
             data.incDependencyCount(verts[childIndex]);
             data.incDependencyCount(verts[(childIndex + 1) % 4]);
-            //System.out.println("Enabled1: " + verts[childIndex].getX() + " " + verts[childIndex].getY() + " " + data.getDependencyCount(verts[childIndex]));
-            //System.out.println("Enabled2: " + verts[(childIndex+1) % 4].getX() + " " + verts[(childIndex+1) % 4].getY() + " " + data.getDependencyCount(verts[(childIndex+1) % 4]));
             children[childIndex].enabled = true;
             return true;
         } else {
@@ -263,25 +259,14 @@ public class QuadSquare {
                 if (child == null) {
                     int localX = ((childIndex % 3) == 0) ? 1 : -1;
                     int localY = ((childIndex & 2) == 0) ? 1 : -1;
-                    Coordinate center = new Coordinate(current.verts[4].getX() + localX * 0.25f * size, current.verts[4].getY() + localY * 0.25f * size);
+                    Coordinate center = new Coordinate(current.verts[4].getX() + localX * 0.25f * current.size, current.verts[4].getY() + localY * 0.25f * current.size);
                     if (data.connectChild(center)) {
-                        if (current.enableChild(childIndex)) {
-                            System.out.println("Neighbor Successfully Enabled");
-                            return true;
-                        } else {
-                            return false;
-                        }
+                        return current.enableChild(childIndex);
                     } else {
                         return false;
                     }
                 } else {
-                    if (current.enableChild(childIndex)) {
-                        System.out.println("Neighbor Successfully Enabled");
-                        return true;
-                    } else {
-                        return false;
-                    }
-                    //return current.enableChild(childIndex);
+                    return current.enableChild(childIndex);
                 }
             } else {
                 current = child;
@@ -300,33 +285,26 @@ public class QuadSquare {
     }
     
     public void update(float x, float y, float z) {
-        System.out.println("Updating Square: " + (level - 1) + " " + index);
         float dist;
+        boolean hasEnabled = false;
         for (int i = 0; i < verts.length - 1; i++) {
-            System.out.println("Checking vertex: " + i);
             dist = distance(x, y, z, verts[i]);
             if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
                 if (!data.isEnabled(verts[i]) && enableVertexNeighbor(i)) {
-                    System.out.println("Enabling: " + verts[i].getX() + " " + verts[i].getY());
                     markDirty();
                     data.setEnabled(verts[i], true);
-                } else {
-                    System.out.println("Failed to enable.");
                 }
+                hasEnabled = true;
             } else if (data.isEnabled(verts[i]) && data.getDependencyCount(verts[i]) == 0) {
-                System.out.println("Disabling: " + verts[i].getX() + " " + verts[i].getY());
                 notifyVertexDisable(i);
                 markDirty();
                 data.setEnabled(verts[i], false);
-            } else {
-                System.out.println("Skipped: " + verts[i].getX() + " " + verts[i].getY());
             }
         }
         
-        if (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3])) {
+        if (!hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
             dist = distance(x, y, z, verts[4]);
             if (data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
-                System.out.println("Disabling Square 4");
                 merge();
                 enabled = false;
                 data.decDependencyCount(corners[(index + 1) % 4]);
@@ -390,6 +368,7 @@ public class QuadSquare {
                 if (!children[i].enabled) {
                     dist = distance(x, y, z, children[i].errorVert);
                     if (children[i].maxError * DETAIL_THRESHOLD > dist) {
+                        //System.out.println("Enabling Child " + i);
                         if (enableChild(i)) {
                             children[i].update(x, y, z);
                         }
@@ -451,10 +430,6 @@ public class QuadSquare {
         float yDiff = c.getY() - y1;
         float zDiff = data.getHeight(c) - z1;
         return (float)Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff); 
-    }
-    
-    public void test() {
-        data.test();
     }
     
     private class SharedData {
@@ -575,12 +550,6 @@ public class QuadSquare {
         
         int getDependencyCount(Coordinate c) {
             return vertices.get(c).getDependencyCount();
-        }
-        
-        void test() {
-            for (VertexData vert : vertices.values()) {
-                System.out.println(vert.getDependencyCount());
-            }
         }
     }
 }
