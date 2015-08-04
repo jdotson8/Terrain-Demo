@@ -174,13 +174,13 @@ public class TerrainController extends AnimationTimer implements Initializable {
         System.out.println("Seed: " + seed);
         Noise2D noise = new Noise2D(-4402001516981054855L);
         Noise2D noise2 = new Noise2D(seed);
-        noise.addNoiseLayer(20, 0.005, "x");
-        noise.addNoiseLayer(5, 0.03, "x");
+        noise.addNoiseLayer(30, 0.005, "x");
+        noise.addNoiseLayer(2, 0.03, "x");
         //noise.addNoiseLayer(5, 0.023, "x");
         //noise.addNoiseLayer(2, 0.3, "x");
         //noise.addNoiseLayer(1, 0.4, "x");
-        noise.addNoiseLayer(2, 0.05, "x");
-        noise.addNoiseLayer(1, 0.1, "x");
+        noise.addNoiseLayer(1, 0.05, "x");
+        //noise.addNoiseLayer(1, 0.1, "x");
         test = new QuadSquare(512, noise);
         terrain.getChildren().add(test.getMeshGroup());
         mesh = new TriangleMesh();
@@ -238,6 +238,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
+            //System.out.println(cameraX + " " + cameraY);
             cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.R)) {
@@ -245,6 +246,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
             test.render();
             //test.test();
             //System.out.println(QuadSquare.squareCount);
+            //update = !update;
             inputMap.put(KeyCode.R, false);
         }
         if (update) {
