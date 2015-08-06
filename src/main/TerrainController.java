@@ -42,7 +42,7 @@ import main.TransformLayer.RotateOrder;
  * @author Administrator
  */
 public class TerrainController extends AnimationTimer implements Initializable {
-    private static final double CAMERA_TRANSLATE_SPEED = 1;
+    private static final double CAMERA_TRANSLATE_SPEED = 3;
     private static final double CAMERA_ROTATE_SPEED = 0.01;
 
     @FXML
@@ -238,8 +238,9 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
-            //System.out.println(cameraX + " " + cameraY);
-            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
+            System.out.println(cameraX.getValue() + " " + cameraY.getValue());
+            //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
+            inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
@@ -251,7 +252,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         }
         if (update) {
             test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            //test.render();
+            test.render();
         }
 //        for (int i = 0; i < mesh.getPoints().size(); i ++) {
 //            mesh.getPoints().set(i, 50 * r.nextFloat());

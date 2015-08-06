@@ -89,7 +89,7 @@ public class QuadSquare {
         subdivide();
         enabled = true;
         isDirty = true;
-        mesh = new MeshView(EMPTY);
+        mesh = new MeshView(new TriangleMesh());
         mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
         meshGroup.getChildren().add(mesh);
@@ -134,8 +134,8 @@ public class QuadSquare {
         }
         
         isDirty = true;
-        mesh = new MeshView(EMPTY);
-        mesh.setDrawMode(DrawMode.LINE);
+        mesh = new MeshView(new TriangleMesh());
+        //mesh.setDrawMode(DrawMode.LINE);
 //        if (index == 0) {
 //            mesh.setMaterial(new PhongMaterial(Color.BLUE));
 //        } else if (index == 1) {
@@ -162,7 +162,11 @@ public class QuadSquare {
     public void merge() {
         markDirty();
         meshGroup.getChildren().clear();
-        mesh.setMesh(EMPTY);
+        TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+        squareMesh.getPoints().clear();
+        squareMesh.getTexCoords().clear();
+        squareMesh.getFaces().clear();
+        squareMesh.getFaceSmoothingGroups().clear();
         //mesh.setMaterial(new PhongMaterial(new Color(R.nextFloat(), R.nextFloat(), R.nextFloat(), 1)));
         meshGroup.getChildren().add(mesh);
         for (int i = 0; i < children.length; i++) {
@@ -206,7 +210,7 @@ public class QuadSquare {
         }
     }
     
-    public void notifyVertexDisable(int vertIndex) {
+    public void notifyVertexDisable2(int vertIndex) {
         int childIndex;
         QuadSquare current = this;
         LinkedList<Integer> opposites = new LinkedList<>();
@@ -232,12 +236,19 @@ public class QuadSquare {
         }
     }
     
-    public boolean enableVertexNeighbor2(int vertIndex) {
+    public void notifyVertexDisable(int vertIndex) {
+        if (neighbors[vertIndex] != null) {
+            neighbors[vertIndex].markDirty();
+        }
+    }
+    
+    public boolean enableVertexNeighbor(int vertIndex) {
         if (data.isEnabled(verts[vertIndex])) {
             return true;
         } else if (neighbors[vertIndex] != null) {
             QuadSquare neighbor = neighbors[vertIndex];
             if (neighbor.enabled) {
+                neighbor.markDirty();
                 return true;
             } else {
                 return neighbor.parent.enableChild(neighbor.index);
@@ -271,7 +282,7 @@ public class QuadSquare {
         }
     }
     
-    public boolean enableVertexNeighbor(int vertIndex) {
+    public boolean enableVertexNeighbor2(int vertIndex) {
         if (data.isEnabled(verts[vertIndex])) {
             return true;
         }
@@ -329,6 +340,16 @@ public class QuadSquare {
         }
     }
     
+    public void testDirty() {
+        if (!isDirty)
+            return;
+        QuadSquare current = this;
+        while (current.parent != null && current.parent.isDirty) {
+            current = current.parent;
+        }
+        System.out.println(current.verts[4].getX() + " " + current.verts[4].getY());
+    }
+    
     public void update(float x, float y, float z) {
         float dist;
         boolean hasEnabled = false;
@@ -340,24 +361,23 @@ public class QuadSquare {
                     data.setEnabled(verts[i], true);
                 }
                 hasEnabled = true;
+            } else if (data.isEnabled(verts[i]) && data.getDependencyCount(verts[i]) == 0) {
+                notifyVertexDisable(i);
+                markDirty();
+                data.setEnabled(verts[i], false);
             }
-//            } else if (data.isEnabled(verts[i]) && data.getDependencyCount(verts[i]) == 0) {
-//                notifyVertexDisable(i);
-//                markDirty();
-//                data.setEnabled(verts[i], false);
-//            }
         }
         
-//        if (!hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
-//            dist = distance(x, y, z, verts[4]);
-//            if (data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
-//                merge();
-//                enabled = false;
-//                data.decDependencyCount(corners[(index + 1) % 4]);
-//                data.decDependencyCount(corners[(index + 3) % 4]);
-//                data.setEnabled(verts[4], false);
-//            }
-//        }
+        if (!hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
+            dist = distance(x, y, z, verts[4]);
+            if (data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
+                merge();
+                enabled = false;
+                data.decDependencyCount(corners[(index + 1) % 4]);
+                data.decDependencyCount(corners[(index + 3) % 4]);
+                data.setEnabled(verts[4], false);
+            }
+        }
 //            if (!verts[4].equals(errorVert)) {
 //                if (errorVert.equals(verts[0])) {
 //                    System.out.println("Error 0: " + data.isEnabled(verts[0]));
@@ -429,10 +449,15 @@ public class QuadSquare {
     public void render() {
         if (isDirty) {
             boolean connectPoints = false;
-            TriangleMesh squareMesh = new TriangleMesh();
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            squareMesh.getFaceSmoothingGroups().clear();
             squareMesh.getTexCoords().addAll(0f, 0f);
             ObservableFloatArray points = squareMesh.getPoints();
             points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
+            
             for (int i = 0; i < 4; i++) {
                 if (children[i] != null && children[i].enabled) {
                     children[i].render();
@@ -462,10 +487,10 @@ public class QuadSquare {
                 squareMesh.getFaces().addAll(0, 0, (points.size() / 3) - 1, 0, 1, 0);
                 squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
             }
-            if (points.size() > 3) {
-                mesh.setMesh(squareMesh);
-            } else if (mesh != null) {
-                mesh.setMesh(EMPTY);
+            
+            mesh.setMesh(squareMesh);
+            if (points.size() <= 3) {
+                points.clear();
             }
             isDirty = false;
         }
