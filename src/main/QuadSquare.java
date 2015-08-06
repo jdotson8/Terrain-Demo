@@ -354,17 +354,22 @@ public class QuadSquare {
         float dist;
         boolean hasEnabled = false;
         for (int i = 0; i < verts.length - 1; i++) {
-            dist = distance(x, y, z, verts[i]);
-            if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
-                if (!data.isEnabled(verts[i]) && enableVertexNeighbor(i)) {
-                    markDirty();
-                    data.setEnabled(verts[i], true);
+            if (!data.isEnabled(verts[i])) {
+                dist = distance(x, y, z, verts[i]);
+                if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
+                    if (enableVertexNeighbor(i)) {
+                        markDirty();
+                        data.setEnabled(verts[i], true);
+                    }
+                    hasEnabled = true;
                 }
-                hasEnabled = true;
-            } else if (data.isEnabled(verts[i]) && data.getDependencyCount(verts[i]) == 0) {
-                notifyVertexDisable(i);
-                markDirty();
-                data.setEnabled(verts[i], false);
+            } else if (data.getDependencyCount(verts[i]) == 0) {
+                dist = distance(x, y, z, verts[i]);
+                if (data.getError(verts[i]) * DETAIL_THRESHOLD <= dist) {
+                    notifyVertexDisable(i);
+                    markDirty();
+                    data.setEnabled(verts[i], false);
+                }
             }
         }
         

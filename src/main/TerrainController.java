@@ -42,7 +42,7 @@ import main.TransformLayer.RotateOrder;
  * @author Administrator
  */
 public class TerrainController extends AnimationTimer implements Initializable {
-    private static final double CAMERA_TRANSLATE_SPEED = 3;
+    private static final double CAMERA_TRANSLATE_SPEED = 1;
     private static final double CAMERA_ROTATE_SPEED = 0.01;
 
     @FXML
