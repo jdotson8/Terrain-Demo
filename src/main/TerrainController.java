@@ -37,6 +37,8 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.transform.MatrixType;
+import javafx.scene.transform.Transform;
 import main.TransformLayer.RotateOrder;
 
 /**
@@ -61,6 +63,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
     private double mousePosY;
     private DoubleProperty pitch;
     private DoubleProperty yaw;
+    TransformLayer cameraTransform;
     private DoubleProperty cameraX;
     private DoubleProperty cameraY;
     private DoubleProperty cameraZ;
@@ -146,7 +149,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         cameraY = new SimpleDoubleProperty(0);
         cameraZ = new SimpleDoubleProperty(300);
         
-        TransformLayer cameraTransform = new TransformLayer();
+        cameraTransform = new TransformLayer();
         cameraTransform.rxProperty().bind(new DoubleBinding() {
             {super.bind(pitch);}
 
@@ -223,7 +226,10 @@ public class TerrainController extends AnimationTimer implements Initializable {
                 return new Task() {
                     @Override
                     protected Object call() throws Exception {
-                        test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+                        float vx = (float) (Math.cos(pitch.get()) * Math.cos(yaw.get()));
+                        float vy = (float) (Math.cos(pitch.get()) * Math.sin(yaw.get()));
+                        float vz = (float) (Math.sin(pitch.get()));
+                        test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get(), vx, vy, vz);
                         return null;
                     }
                 };
@@ -255,19 +261,22 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
-            System.out.println(cameraX.getValue() + " " + cameraY.getValue());
+            Transform t = cameraTransform.getLocalToSceneTransform();
+            double[] vec = t.column(MatrixType.MT_3D_3x4, 2);
+            System.out.println(vec[0] + " " + vec[1] + " " + vec[2] + " " + Math.sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]));
+            //System.out.println(cameraX.getValue() + " " + cameraY.getValue());
             //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
             inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            test.render();
+            //test.render();
             //test.test();
             //System.out.println(QuadSquare.squareCount);
-            //update = !update;
+            update = !update;
             inputMap.put(KeyCode.R, false);
         }
-        if (service.getState() != Worker.State.RUNNING) {
+        if (update && service.getState() != Worker.State.RUNNING) {
             //System.out.println(service.getState());
             test.render();
             service.restart();

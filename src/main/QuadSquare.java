@@ -334,13 +334,18 @@ public class QuadSquare {
         }
     }
     
-    public void update(float x, float y, float z) {
+    public void update(float x, float y, float z, float vx, float vy, float vz) {
         float dist;
         boolean hasEnabled = false;
         for (int i = 0; i < verts.length - 1; i++) {
             if (!data.isEnabled(verts[i])) {
                 dist = distance(x, y, z, verts[i]);
-                if (data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
+                float vecToX = (verts[i].getX() - x) / dist;
+                float vecToY = (verts[i].getY() - y) / dist;
+                float vecToZ = (data.getHeight(verts[i]) - z) / dist;
+                float dot = Math.max(0, vecToX * vx + vecToY * vy + vecToZ * vz);
+                //System.out.println(dot);
+                if ((dot) * data.getError(verts[i]) * DETAIL_THRESHOLD > dist) {
                     if (enableVertexNeighbor(i)) {
                         markDirty();
                         data.setEnabled(verts[i], true);
@@ -349,7 +354,11 @@ public class QuadSquare {
                 }
             } else if (data.getDependencyCount(verts[i]) == 0) {
                 dist = distance(x, y, z, verts[i]);
-                if (data.getError(verts[i]) * DETAIL_THRESHOLD <= dist) {
+                float vecToX = (verts[i].getX() - x) / dist;
+                float vecToY = (verts[i].getY() - y) / dist;
+                float vecToZ = (data.getHeight(verts[i]) - z) / dist;
+                float dot = vecToX * vx + vecToY * vy + vecToZ * vz;
+                if ((dot) * data.getError(verts[i]) * DETAIL_THRESHOLD <= dist) {
                     notifyVertexDisable(i);
                     markDirty();
                     data.setEnabled(verts[i], false);
@@ -359,7 +368,11 @@ public class QuadSquare {
         
         if (!hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
             dist = distance(x, y, z, verts[4]);
-            if (data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
+            float vecToX = (verts[4].getX() - x) / dist;
+            float vecToY = (verts[4].getY() - y) / dist;
+            float vecToZ = (data.getHeight(verts[4]) - z) / dist;
+            float dot = Math.max(0, vecToX * vx + vecToY * vy + vecToZ * vz);
+            if ((dot) * data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
                 merge();
                 enabled = false;
                 data.decDependencyCount(corners[(index + 1) % 4]);
@@ -423,14 +436,18 @@ public class QuadSquare {
                 }
                 if (!children[i].enabled) {
                     dist = distance(x, y, z, children[i].errorVert);
-                    if (children[i].maxError * DETAIL_THRESHOLD > dist) {
+                    float vecToX = (children[i].errorVert.getX() - x) / dist;
+                    float vecToY = (children[i].errorVert.getY() - y) / dist;
+                    float vecToZ = (data.getHeight(children[i].errorVert) - z) / dist;
+                    float dot = Math.max(0, vecToX * vx + vecToY * vy + vecToZ * vz);
+                    if ((dot) * children[i].maxError * DETAIL_THRESHOLD > dist) {
                         //System.out.println("Enabling Child " + i);
                         if (enableChild(i)) {
-                            children[i].update(x, y, z);
+                            children[i].update(x, y, z, vx, vy, vz);
                         }
                     }
                 } else {
-                    children[i].update(x, y, z);
+                    children[i].update(x, y, z, vx, vy, vz);
                 }
             }
         }
