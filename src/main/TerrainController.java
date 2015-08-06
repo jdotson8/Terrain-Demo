@@ -268,11 +268,11 @@ public class TerrainController extends AnimationTimer implements Initializable {
             inputMap.put(KeyCode.R, false);
         }
         if (service.getState() != Worker.State.RUNNING) {
-            System.out.println(service.getState());
+            //System.out.println(service.getState());
             test.render();
             service.restart();
         } else {
-            System.out.println(service.getState());
+            //System.out.println(service.getState());
         }
 //        for (int i = 0; i < mesh.getPoints().size(); i ++) {
 //            mesh.getPoints().set(i, 50 * r.nextFloat());

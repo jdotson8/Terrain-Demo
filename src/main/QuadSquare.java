@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -332,18 +334,7 @@ public class QuadSquare {
         }
     }
     
-    public void testDirty() {
-        if (!isDirty)
-            return;
-        QuadSquare current = this;
-        while (current.parent != null && current.parent.isDirty) {
-            current = current.parent;
-        }
-        System.out.println(current.verts[4].getX() + " " + current.verts[4].getY());
-    }
-    
     public void update(float x, float y, float z) {
-        System.out.println("Made it" + level);
         float dist;
         boolean hasEnabled = false;
         for (int i = 0; i < verts.length - 1; i++) {
@@ -546,7 +537,7 @@ public class QuadSquare {
             }
         });
         ConcurrentHashMap<Coordinate, VertexData> vertices = new ConcurrentHashMap<>();
-        HashMap<Coordinate, Task<QuadSquare>> quadSquareBuffer = new HashMap<>();
+        HashMap<Coordinate, Future<QuadSquare>> quadSquareBuffer = new HashMap<>();
         
         public SharedData(Noise2D noise) {
             this.noise = noise;
@@ -554,20 +545,15 @@ public class QuadSquare {
         }
         
         void loadChild(Coordinate center, QuadSquare parent, int index) {
-            Task<QuadSquare> task = new Task<QuadSquare>(){
-                @Override
-                protected QuadSquare call() throws Exception {
-                    return new QuadSquare(parent, index);
-                }
-            };
-            quadSquareBuffer.put(center, task);
-            quadSquareLoader.submit(task);
+            Callable<QuadSquare> callable = () -> new QuadSquare(parent, index);
+            //quadSquareBuffer.put(center, task);
+            quadSquareBuffer.put(center, quadSquareLoader.submit(callable));
         }
         
         void removeChild(Coordinate center) {
-            Task<QuadSquare> task = quadSquareBuffer.get(center);
-            if (task != null) {
-                task.cancel();
+            Future<QuadSquare> futureChild = quadSquareBuffer.get(center);
+            if (futureChild != null) {
+                futureChild.cancel(true);
                 quadSquareBuffer.remove(center);
             }
         }
@@ -577,15 +563,20 @@ public class QuadSquare {
         }
         
         boolean connectChild(Coordinate center) {
-            Task<QuadSquare> task = quadSquareBuffer.get(center);
-            if (task != null && task.getState().equals(Worker.State.SUCCEEDED)) {
-                QuadSquare child = task.getValue();
-                if (child.parent != null) {
-                    child.parent.children[child.index] = child;
-                    quadSquareBuffer.remove(center);
-                    squareCount++;
-                    return true;
-                } else {
+            Future<QuadSquare> futureChild = quadSquareBuffer.get(center);
+            if (futureChild != null && futureChild.isDone()) {
+                try {
+                    QuadSquare child = futureChild.get();
+                        if (child.parent != null) {
+                        child.parent.children[child.index] = child;
+                        quadSquareBuffer.remove(center);
+                        squareCount++;
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
                     return false;
                 }
             } else {
