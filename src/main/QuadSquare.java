@@ -366,7 +366,7 @@ public class QuadSquare {
             }
         }
         
-        if (!hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
+        if (level > 1 && !hasEnabled && (!data.isEnabled(verts[0]) && !data.isEnabled(verts[1]) && !data.isEnabled(verts[2]) && !data.isEnabled(verts[3]))) {
             dist = distance(x, y, z, verts[4]);
             float vecToX = (verts[4].getX() - x) / dist;
             float vecToY = (verts[4].getY() - y) / dist;
@@ -456,6 +456,8 @@ public class QuadSquare {
     public void render() {
         if (mesh == null) {
             mesh = new MeshView(new TriangleMesh());
+            mesh.setMaterial(new PhongMaterial(Color.RED.interpolate(Color.YELLOW, level / 10.0)));
+            //mesh.setDrawMode(DrawMode.LINE);
             meshGroup.getChildren().add(mesh);
             if (parent != null) {
                 parent.meshGroup.getChildren().add(meshGroup);
@@ -483,7 +485,7 @@ public class QuadSquare {
                         children[i].render();
                     }
                     connectPoints = false;
-                    if (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled) {
+                    if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
                         points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
                         connectPoints = true;
                     }
