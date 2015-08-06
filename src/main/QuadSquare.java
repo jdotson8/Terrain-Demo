@@ -89,10 +89,10 @@ public class QuadSquare {
         subdivide();
         enabled = true;
         isDirty = true;
-        mesh = new MeshView(new TriangleMesh());
-        mesh.setDrawMode(DrawMode.LINE);
+//        mesh = new MeshView(new TriangleMesh());
+//        mesh.setDrawMode(DrawMode.LINE);
         meshGroup = new Group();
-        meshGroup.getChildren().add(mesh);
+//        meshGroup.getChildren().add(mesh);
     }
     
     public QuadSquare(QuadSquare parent, int index) {
@@ -134,15 +134,15 @@ public class QuadSquare {
         }
         
         isDirty = true;
-        mesh = new MeshView(new TriangleMesh());
-        //mesh.setDrawMode(DrawMode.LINE);
-//        if (index == 0) {
-//            mesh.setMaterial(new PhongMaterial(Color.BLUE));
-//        } else if (index == 1) {
-//            mesh.setMaterial(new PhongMaterial(Color.RED));
-//        }
+//        mesh = new MeshView(new TriangleMesh());
+//        //mesh.setDrawMode(DrawMode.LINE);
+////        if (index == 0) {
+////            mesh.setMaterial(new PhongMaterial(Color.BLUE));
+////        } else if (index == 1) {
+////            mesh.setMaterial(new PhongMaterial(Color.RED));
+////        }
         meshGroup = new Group();
-        meshGroup.getChildren().add(mesh);
+//        meshGroup.getChildren().add(mesh);
     }
     
     public Group getMeshGroup() {
@@ -161,14 +161,6 @@ public class QuadSquare {
     
     public void merge() {
         markDirty();
-        meshGroup.getChildren().clear();
-        TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
-        squareMesh.getPoints().clear();
-        squareMesh.getTexCoords().clear();
-        squareMesh.getFaces().clear();
-        squareMesh.getFaceSmoothingGroups().clear();
-        //mesh.setMaterial(new PhongMaterial(new Color(R.nextFloat(), R.nextFloat(), R.nextFloat(), 1)));
-        meshGroup.getChildren().add(mesh);
         for (int i = 0; i < children.length; i++) {
             if (children[i] != null) {
                 for (int j = 0; j < neighbors.length; j++) {
@@ -351,6 +343,7 @@ public class QuadSquare {
     }
     
     public void update(float x, float y, float z) {
+        System.out.println("Made it" + level);
         float dist;
         boolean hasEnabled = false;
         for (int i = 0; i < verts.length - 1; i++) {
@@ -426,6 +419,7 @@ public class QuadSquare {
 //        }
         
         if (subdivided) {
+            //System.out.println("here?");
             childLoop:
             for (int i = 0; i < children.length; i++) {
                 if (children[i] == null) {
@@ -452,7 +446,19 @@ public class QuadSquare {
     }
     
     public void render() {
-        if (isDirty) {
+        if (mesh == null) {
+            mesh = new MeshView(new TriangleMesh());
+            meshGroup.getChildren().add(mesh);
+            if (parent != null) {
+                parent.meshGroup.getChildren().add(meshGroup);
+            }
+            if (!enabled) {
+                isDirty = false;
+                return;
+            }
+        }
+        
+        if (enabled) {
             boolean connectPoints = false;
             TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
             squareMesh.getPoints().clear();
@@ -465,13 +471,18 @@ public class QuadSquare {
             
             for (int i = 0; i < 4; i++) {
                 if (children[i] != null && children[i].enabled) {
-                    children[i].render();
+                    if (children[i].isDirty) {
+                        children[i].render();
+                    }
                     connectPoints = false;
                     if (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled) {
                         points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
                         connectPoints = true;
                     }
                 } else {
+                    if (children[i] != null && children[i].isDirty) {
+                        children[i].render();
+                    }
                     points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
                     if (!connectPoints) {
                         connectPoints = true;
@@ -497,8 +508,15 @@ public class QuadSquare {
             if (points.size() <= 3) {
                 points.clear();
             }
-            isDirty = false;
+        } else {
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            squareMesh.getFaceSmoothingGroups().clear();
+            meshGroup.getChildren().remove(1, meshGroup.getChildren().size());
         }
+        isDirty = false;
     }
     
     public float distance(float x1, float y1, float z1, Coordinate c) {
@@ -564,7 +582,6 @@ public class QuadSquare {
                 QuadSquare child = task.getValue();
                 if (child.parent != null) {
                     child.parent.children[child.index] = child;
-                    child.parent.meshGroup.getChildren().add(child.meshGroup);
                     quadSquareBuffer.remove(center);
                     squareCount++;
                     return true;

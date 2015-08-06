@@ -13,6 +13,9 @@ import javafx.animation.AnimationTimer;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -72,6 +75,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
     
     TriangleMesh mesh;
     Random r = new Random();
+    
+    Service service;
 
 
     /**
@@ -212,6 +217,18 @@ public class TerrainController extends AnimationTimer implements Initializable {
 //                root.getChildren().add(sphere);
 //            }
 //        }
+        service = new Service() {
+            @Override
+            protected Task createTask() {
+                return new Task() {
+                    @Override
+                    protected Object call() throws Exception {
+                        test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+                        return null;
+                    }
+                };
+            }
+        };
     }
 
     @Override
@@ -250,9 +267,12 @@ public class TerrainController extends AnimationTimer implements Initializable {
             //update = !update;
             inputMap.put(KeyCode.R, false);
         }
-        if (update) {
-            test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
+        if (service.getState() != Worker.State.RUNNING) {
+            System.out.println(service.getState());
             test.render();
+            service.restart();
+        } else {
+            System.out.println(service.getState());
         }
 //        for (int i = 0; i < mesh.getPoints().size(); i ++) {
 //            mesh.getPoints().set(i, 50 * r.nextFloat());
