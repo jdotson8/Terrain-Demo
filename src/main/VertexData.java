@@ -11,6 +11,8 @@ package main;
  */
 public class VertexData {
     private float height;
+    private float[] normal = new float[3];
+    private float normalizer;
     private float error;
     private boolean enabled;
     private int dependencyCount;
@@ -23,6 +25,20 @@ public class VertexData {
     
     public float getHeight() {
         return height;
+    }
+    
+    public void addNormal(float nx, float ny, float nz, float weight) {
+        normal[0] += nx;
+        normal[1] += ny;
+        normal[2] += nz;
+        normalizer += weight;
+    }
+    
+    public void removeNormal(float nx, float ny, float nz, float weight) {
+        normal[0] -= nx;
+        normal[1] -= ny;
+        normal[2] -= nz;
+        normalizer -= weight;
     }
     
     public float getError() {

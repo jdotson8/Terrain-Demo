@@ -78,6 +78,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
     
     TriangleMesh mesh;
     Random r = new Random();
+    Color c = new Color(1, 0, 0, 1);
     
     Service service;
 
@@ -278,7 +279,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
         }
         if (update && service.getState() != Worker.State.RUNNING) {
             //System.out.println(service.getState());
-            test.render();
+            c = c.deriveColor(0.5, 1, 1, 1);
+            test.render(c);
             service.restart();
         } else {
             //System.out.println(service.getState());
