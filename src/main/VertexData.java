@@ -41,6 +41,33 @@ public class VertexData {
         normalizer -= weight;
     }
     
+    public float[] getNormal() {
+        float[] normalized = new float[3];
+        normalized[0] = normal[0] / normalizer;
+        normalized[1] = normal[1] / normalizer;
+        normalized[2] = normal[2] / normalizer;
+        float mag = (float) Math.sqrt(normalized[0] * normalized[0] + normalized[1] * normalized[1] + normalized[2] * normalized[2]);
+        System.out.println(mag);
+        normalized[0] /= mag;
+        normalized[1] /= mag;
+        normalized[2] /= mag;
+        mag = (float) Math.sqrt(normalized[0] * normalized[0] + normalized[1] * normalized[1] + normalized[2] * normalized[2]);
+        System.out.println(mag);
+        return normalized;
+    }
+    
+    public float getNx() {
+        return normal[0] / normalizer;
+    }
+    
+    public float getNy() {
+        return normal[1] / normalizer;
+    }
+    
+    public float getNz() {
+        return normal[2] / normalizer;
+    }
+    
     public float getError() {
         return error;
     }
