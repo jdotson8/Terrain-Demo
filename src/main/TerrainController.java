@@ -272,10 +272,10 @@ public class TerrainController extends AnimationTimer implements Initializable {
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             //test.render(Color.RED);
-            //test.test();
+            test.test();
             //System.out.println(QuadSquare.squareCount);
             //service.restart();
-            update = !update;
+            //update = !update;
             inputMap.put(KeyCode.R, false);
         }
         if (update && service.getState() != Worker.State.RUNNING) {

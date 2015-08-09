@@ -35,6 +35,7 @@ import javafx.scene.shape.TriangleMesh;
  */
 public class QuadSquare {
     private static final float DETAIL_THRESHOLD = 200;
+    private static final QuadSquare NULL_NEIGHBOR = new QuadSquare();
     private SharedData data; 
     private QuadSquare parent;
     private QuadSquare[] neighbors = new QuadSquare[4];
@@ -52,6 +53,10 @@ public class QuadSquare {
     
     private Group meshGroup;
     private MeshView mesh;
+    
+    private QuadSquare() {
+        //Null neighbor;
+    }
     
     public QuadSquare(float initSize, Noise2D noise) {
         data = new SharedData(noise);
@@ -156,6 +161,23 @@ public class QuadSquare {
                         children[i].neighbors[j] = null;
                     }
                 }
+                
+                data.removeVertex(children[i].verts[4]);
+                for (int j = 0; j < verts.length - 1; j++) {
+                    if (j == i) {
+                        QuadSquare neighbor = getNeighbor(j);
+                        if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                            data.removeVertex(children[i].verts[j]);
+                        }
+                    } else if (j == (i + 1) % 4) {
+                        QuadSquare neighbor = getNeighbor(j);
+                        if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                            data.removeVertex(children[i].verts[j]);
+                        }
+                    } else {
+                        data.removeVertex(children[i].verts[j]);
+                    }
+                }
                 children[i] = null;
             } else {
                 int localX = ((i % 3) == 0) ? 1 : -1;
@@ -195,29 +217,24 @@ public class QuadSquare {
         }
     }
     
-    public boolean enableVertexNeighbor(int vertIndex) {
-        if (data.isEnabled(verts[vertIndex])) {
-            return true;
-        } else if (neighbors[vertIndex] != null) {
-            QuadSquare neighbor = neighbors[vertIndex];
-            if (neighbor.enabled) {
-                neighbor.markDirty();
-                return true;
-            } else {
-                return neighbor.parent.enableChild(neighbor.index);
-            }
+    public QuadSquare getNeighbor(int neighborIndex) {
+        QuadSquare neighbor = neighbors[neighborIndex];
+        if (neighbor != null) {
+            return neighbor;
         } else if (parent != null) {
-            int childIndex = (index ^ 1) ^ ((vertIndex & 1) << 1);
+            int childIndex = (index ^ 1) ^ ((neighborIndex & 1) << 1);
             QuadSquare neighborParent;
-            if (((vertIndex - index) & 2) != 0) {
+            if (((neighborIndex - index) & 2) != 0) {
                 neighborParent = parent;
-            } else if (parent.neighbors[vertIndex] != null) {
-                neighborParent = parent.neighbors[vertIndex];
+            } else if (parent.neighbors[neighborIndex] != null &&
+                        parent.neighbors[neighborIndex] != NULL_NEIGHBOR) {
+                neighborParent = parent.neighbors[neighborIndex];
             } else {
-                return true;
+                neighbors[neighborIndex] = NULL_NEIGHBOR;
+                return NULL_NEIGHBOR;
             }
-            QuadSquare child = neighborParent.children[childIndex];
-            if (child == null) {
+            neighbor = neighborParent.children[childIndex];
+            if (neighbor == null) {
                 int localX = ((childIndex % 3) == 0) ? 1 : -1;
                 int localY = ((childIndex & 2) == 0) ? 1 : -1;
                 Coordinate center = new Coordinate(
@@ -226,16 +243,33 @@ public class QuadSquare {
                         neighborParent.verts[4].getY() +
                                 localY * 0.25f * neighborParent.size);
                 if (data.connectChild(center)) {
-                    child = neighborParent.children[childIndex];
+                    neighbor = neighborParent.children[childIndex];
                 } else {
-                    return false;
+                    return null;
                 }
             }
-            neighbors[vertIndex] = child;
-            child.neighbors[(vertIndex + 2) % 4] = this;
-            return neighborParent.enableChild(childIndex);
+            neighbors[neighborIndex] = neighbor;
+            neighbor.neighbors[(neighborIndex + 2) % 4] = this;
+            return neighbor;
         } else {
+            neighbors[neighborIndex] = NULL_NEIGHBOR;
+            return NULL_NEIGHBOR;
+        }
+    }
+    
+    public boolean enableVertexNeighbor(int vertIndex) {
+        QuadSquare neighbor = getNeighbor(vertIndex);
+        if (neighbor == null) {
+            return false;
+        } else if (neighbor == NULL_NEIGHBOR) {
             return true;
+        } else {
+            if (neighbor.enabled) {
+                neighbor.markDirty();
+                return true;
+            } else {
+                return neighbor.parent.enableChild(neighbor.index);
+            }
         }
     }
     
@@ -403,6 +437,10 @@ public class QuadSquare {
         float yDiff = c.getY() - y1;
         float zDiff = data.getHeight(c) - z1;
         return (float)Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff); 
+    }
+    
+    public void test() {
+        System.out.println(data.vertices.mappingCount());
     }
     
     public String toString() {
