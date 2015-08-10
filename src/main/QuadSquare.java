@@ -123,14 +123,32 @@ public class QuadSquare {
         
         float error;
         for (int i = 0; i < verts.length; i++) {
-            if (i == 4) {
-                error = data.addVertex(verts[i], corners[index], corners[(index + 2) % 4]);
+            if (!Thread.interrupted()) {
+                if (i == 4) {
+                    error = data.addVertex(verts[i], corners[index], corners[(index + 2) % 4]);
+                } else {
+                    error = data.addVertex(verts[i], corners[i], corners[(i+3) % 4]);
+                }
+                if (error > maxError) {
+                    errorVert = verts[i];
+                    maxError = error;
+                }
             } else {
-                error = data.addVertex(verts[i], corners[i], corners[(i+3) % 4]);
-            }
-            if (error > maxError) {
-                errorVert = verts[i];
-                maxError = error;
+                for (int j = i - 1; j >= 0; j--) {
+                    if (j == index) {
+                        QuadSquare neighbor = parent.getNeighbor(j);
+                        if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                            data.removeVertex(verts[j]);
+                        }
+                    } else if (j == (index + 1) % 4) {
+                        QuadSquare neighbor = parent.getNeighbor(j);
+                        if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                            data.removeVertex(verts[j]);
+                        }
+                    } else {
+                        data.removeVertex(verts[j]);
+                    }
+                }
             }
         }
 
@@ -477,9 +495,34 @@ public class QuadSquare {
         
         void removeChild(Coordinate center) {
             Future<QuadSquare> futureChild = quadSquareBuffer.get(center);
-            if (futureChild != null) {
-                futureChild.cancel(true);
-                quadSquareBuffer.remove(center);
+            if (futureChild != null && !futureChild.isCancelled()) {
+                if (futureChild.isDone()) {
+                    try {
+                        QuadSquare child = futureChild.get();
+                        data.removeVertex(child.verts[4]);
+                        for (int j = 0; j < child.verts.length - 1; j++) {
+                            if (j == child.index) {
+                                QuadSquare neighbor = child.parent.getNeighbor(j);
+                                if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                                    data.removeVertex(child.verts[j]);
+                                }
+                            } else if (j == (child.index + 1) % 4) {
+                                QuadSquare neighbor = child.parent.getNeighbor(j);
+                                if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                                    data.removeVertex(child.verts[j]);
+                                }
+                            } else {
+                                data.removeVertex(child.verts[j]);
+                            }
+                        }
+                        quadSquareBuffer.remove(center);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                } else {
+                    futureChild.cancel(true);
+                    quadSquareBuffer.remove(center);
+                }
             }
         }
         
@@ -492,7 +535,7 @@ public class QuadSquare {
             if (futureChild != null && futureChild.isDone()) {
                 try {
                     QuadSquare child = futureChild.get();
-                        if (child.parent != null) {
+                    if (child.parent != null) {
                         child.parent.children[child.index] = child;
                         quadSquareBuffer.remove(center);
                         return true;

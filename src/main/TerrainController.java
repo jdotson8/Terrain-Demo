@@ -262,9 +262,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
-            Transform t = cameraTransform.getLocalToSceneTransform();
-            double[] vec = t.column(MatrixType.MT_3D_3x4, 2);
-            System.out.println(vec[0] + " " + vec[1] + " " + vec[2] + " " + Math.sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]));
+            //Transform t = cameraTransform.getLocalToSceneTransform();
+            test.test();
             //System.out.println(cameraX.getValue() + " " + cameraY.getValue());
             //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
             inputMap.put(KeyCode.SPACE, false);
@@ -272,10 +271,10 @@ public class TerrainController extends AnimationTimer implements Initializable {
         if (inputMap.get(KeyCode.R)) {
             //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
             //test.render(Color.RED);
-            test.test();
+            //test.test();
             //System.out.println(QuadSquare.squareCount);
             //service.restart();
-            //update = !update;
+            update = !update;
             inputMap.put(KeyCode.R, false);
         }
         if (update && service.getState() != Worker.State.RUNNING) {
