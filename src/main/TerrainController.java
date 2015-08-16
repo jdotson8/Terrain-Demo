@@ -148,7 +148,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         yaw = new SimpleDoubleProperty(0);
         cameraX = new SimpleDoubleProperty(0);
         cameraY = new SimpleDoubleProperty(0);
-        cameraZ = new SimpleDoubleProperty(300);
+        cameraZ = new SimpleDoubleProperty(100);
         
         cameraTransform = new TransformLayer();
         cameraTransform.rxProperty().bind(new DoubleBinding() {

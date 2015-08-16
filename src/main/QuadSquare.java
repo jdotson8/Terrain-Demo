@@ -48,7 +48,7 @@ public class QuadSquare {
     private float size;
     private boolean subdivided;
     private boolean enabled;
-     boolean isDirty;
+    private boolean isDirty;
     private int level;
     
     private Group meshGroup;
