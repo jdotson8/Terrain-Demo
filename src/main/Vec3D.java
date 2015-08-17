@@ -129,12 +129,20 @@ public class Vec3D {
         return (float) Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
     }
     
+    public static float magnitude(float x, float y, float z) {
+        return (float) Math.sqrt(x * x + y * y + z * z);
+    }
+    
     public float dot(Vec3D vec) {
         return x * vec.x + y * vec.y + z * vec.z;
     }
     
     public static float dot(Vec3D vec1, Vec3D vec2) {
         return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
+    }
+    
+    public static float dot(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return x1 * x2 + y1 * y2 + z1 * z2;
     }
     
     public Vec3D cross(Vec3D vec) {
@@ -149,6 +157,10 @@ public class Vec3D {
                             vec1.x * vec2.y - vec1.y * vec2.x);
     }
     
+    public static Vec3D cross(float x1, float y1, float z1, float x2, float y2, float z2) {
+        return new Vec3D(y1 * x2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2);
+    }
+    
     public Vec3D lerp(Vec3D vec, float t) {
         x = t * x + (1 - t) * vec.x;
         y = t * y + (1 - t) * vec.y;
@@ -160,5 +172,37 @@ public class Vec3D {
         return new Vec3D(t * vec1.x + (1 - t) * vec2.x,
                             t * vec1.y + (1 - t) * vec2.y,
                             t * vec1.z + (1 - t) * vec2.z);
+    }
+    
+    public Vec3D copy() {
+        return new Vec3D(x, y, z);
+    }
+    
+    public static Vec3D copy(Vec3D vec) {
+        return new Vec3D(vec.x, vec.y, vec.z);
+    }
+    
+    public float getX() {
+        return x;
+    }
+    
+    public float getY() {
+        return y;
+    }
+    
+    public float getZ() {
+        return z;
+    }
+    
+    public void setX(float value) {
+        x = value;
+    }
+    
+    public void setY(float value) {
+        y = value;
+    }
+    
+    public void setZ(float value) {
+        z = value;
     }
 }

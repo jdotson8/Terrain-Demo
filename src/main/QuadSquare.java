@@ -38,6 +38,8 @@ public class QuadSquare {
     private static final QuadSquare NULL_NEIGHBOR = new QuadSquare();
     private SharedData data; 
     private QuadSquare parent;
+    private Vec3D[] normals = new Vec3D[8];
+    private float[] weights = new float[8];
     private QuadSquare[] neighbors = new QuadSquare[4];
     private QuadSquare[] children = new QuadSquare[4];
     private Coordinate[] corners = new Coordinate[4];
@@ -90,6 +92,24 @@ public class QuadSquare {
                 errorVert = verts[i];
             }
         }
+        
+        for (int i = 0; i < normals.length; i += 2) {
+            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[i / 2]);
+            Vec3D v1 = new Vec3D(corners[i / 2].getX() - verts[4].getX(),
+                                    corners[i / 2].getY() - verts[4].getY(),
+                                    data.getHeight(corners[i / 2]) - data.getHeight(verts[4]));
+            Vec3D v2 = new Vec3D(v1.getX(), v1.getY(), avg - data.getHeight(verts[4]));
+            Vec3D v3 = new Vec3D(corners[(i / 2 + 1) % 4].getX() - verts[4].getX(),
+                                    corners[(i / 2 + 1) % 4].getY() - verts[4].getY(),
+                                    data.getHeight(corners[(i / 2 + 1) % 4]) - data.getHeight(verts[4]));
+            normals[i] = Vec3D.cross(v1, v2).mult(0.5f);
+            weights[i] = normals[i].magnitude();
+            data.addNormal(normals[i], weights[i], corners[i / 2], verts[4]);
+            normals[i + 1] = Vec3D.cross(v2, v3).mult(0.5f);
+            weights[i] = normals[i + 1].magnitude();
+            data.addNormal(normals[i + 1], weights[i + 1], corners[(i / 2) + 1], verts[4]);
+        }
+        
         subdivide();
         enabled = true;
         isDirty = true;
@@ -571,6 +591,18 @@ public class QuadSquare {
         
         void removeVertex(Coordinate c) {
             vertices.remove(c);
+        }
+        
+        void addNormal(Vec3D normal, float weight, Coordinate ... cs) {
+            for (Coordinate c : cs) {
+                vertices.get(c).addNormal(normal, weight);
+            }
+        }
+        
+        void removeNormal(Vec3D normal, float weight, Coordinate ... cs) {
+            for (Coordinate c : cs) {
+                vertices.get(c).removeNormal(normal, weight);
+            }
         }
         
         float getHeight(Coordinate c) {
