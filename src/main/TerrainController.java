@@ -277,10 +277,12 @@ public class TerrainController extends AnimationTimer implements Initializable {
             update = !update;
             inputMap.put(KeyCode.R, false);
         }
-        if (update && service.getState() != Worker.State.RUNNING) {
+        if (service.getState() != Worker.State.RUNNING) {
             //System.out.println(service.getState());
             c = c.deriveColor(0.5, 1, 1, 1);
-            test.render();
+            if (update) {
+                test.render();
+            }
             service.restart();
         } else {
             //System.out.println(service.getState());

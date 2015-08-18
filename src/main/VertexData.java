@@ -17,9 +17,10 @@ public class VertexData {
     private boolean enabled;
     private int dependencyCount;
     
-    VertexData(float height, float error) {
-        this.height = height;
-        this.error = error;
+    VertexData(float pHeight, float pError) {
+        height = pHeight;
+        error = pError;
+        normal = new Vec3D();
         enabled = false;
     }
     

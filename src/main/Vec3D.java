@@ -14,6 +14,12 @@ public class Vec3D {
     private float y;
     private float z;
     
+    public Vec3D() {
+        x = 0f;
+        y = 0f;
+        z = 0f;
+    }
+    
     public Vec3D(float pX, float pY, float pZ) {
         x = pX;
         y = pY;
