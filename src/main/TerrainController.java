@@ -269,21 +269,16 @@ public class TerrainController extends AnimationTimer implements Initializable {
             inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
-            //test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get());
-            //test.render(Color.RED);
-            //test.test();
-            //System.out.println(QuadSquare.squareCount);
-            //service.restart();
+            if (service.getState() != Worker.State.RUNNING) {
+                test.render();
+                service.restart();
+            }
             update = !update;
             inputMap.put(KeyCode.R, false);
         }
         if (service.getState() != Worker.State.RUNNING) {
-            //System.out.println(service.getState());
-            c = c.deriveColor(0.5, 1, 1, 1);
-            if (update) {
                 test.render();
-            }
-            service.restart();
+                service.restart();
         } else {
             //System.out.println(service.getState());
         }

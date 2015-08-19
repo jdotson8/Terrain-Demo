@@ -81,19 +81,19 @@ public class TerrainDemo extends Application {
 
             @Override
             protected Boolean call() throws Exception {
-                System.out.println("Starting task 2");
+//                System.out.println("Starting task 2");
                 VertexData present = test.computeIfAbsent(new Coordinate(5,5), (key) -> {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException ex1) {
-                        System.out.println("2 Interrupted");
+//                        System.out.println("2 Interrupted");
                     }
                     return new VertexData(5f, 15f);
                 });
                 if (present != null) {
-                    System.out.println(present.getError());
+//                    System.out.println(present.getError());
                 }
-                System.out.println("Finishing 2");
+//                System.out.println("Finishing 2");
                 return true;
             }
             
@@ -101,13 +101,13 @@ public class TerrainDemo extends Application {
         //ex.submit(task1);
         ex.submit(task2);
         
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                System.out.println(j + " " + i);
-                System.out.println((j ^ 1) ^ ((i & 1) << 1));
-                System.out.println(((i - j) & 2) == 0);
-            }
-        }
+//        for (int i = 0; i < 4; i++) {
+//            for (int j = 0; j < 4; j++) {
+//                System.out.println(j + " " + i);
+//                System.out.println((j ^ 1) ^ ((i & 1) << 1));
+//                System.out.println(((i - j) & 2) == 0);
+//            }
+//        }
         /*System.out.println(a.hashCode() == b.hashCode());
         System.out.println(a.hashCode() == c.hashCode());
         System.out.println(a.hashCode() == d.hashCode());

@@ -39,6 +39,10 @@ public class VertexData {
         normalizer -= weight;
     }
     
+    public Vec3D getNormal() {
+        return Vec3D.div(normal, normalizer).normalize();
+    }
+    
 //    public float[] getNormal() {
 //        float[] normalized = new float[3];
 //        normalized[0] = normal[0] / normalizer;

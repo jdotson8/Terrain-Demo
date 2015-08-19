@@ -164,7 +164,7 @@ public class Vec3D {
     }
     
     public static Vec3D cross(float x1, float y1, float z1, float x2, float y2, float z2) {
-        return new Vec3D(y1 * x2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2);
+        return new Vec3D(y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2);
     }
     
     public Vec3D lerp(Vec3D vec, float t) {

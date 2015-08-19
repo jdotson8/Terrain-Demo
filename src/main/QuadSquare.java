@@ -28,6 +28,7 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
 
 /**
  *
@@ -94,7 +95,7 @@ public class QuadSquare {
         }
         
         for (int i = 0; i < normals.length; i += 2) {
-            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[i / 2]);
+            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[(i / 2 + 1) % 4]);
             Vec3D v1 = new Vec3D(corners[i / 2].getX() - verts[4].getX(),
                                     corners[i / 2].getY() - verts[4].getY(),
                                     data.getHeight(corners[i / 2]) - data.getHeight(verts[4]));
@@ -175,7 +176,7 @@ public class QuadSquare {
         }
         
         for (int i = 0; i < normals.length; i += 2) {
-            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[i / 2]);
+            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[(i / 2 + 1) % 4]);
             Vec3D v1 = new Vec3D(corners[i / 2].getX() - verts[4].getX(),
                                     corners[i / 2].getY() - verts[4].getY(),
                                     data.getHeight(corners[i / 2]) - data.getHeight(verts[4]));
@@ -249,33 +250,55 @@ public class QuadSquare {
     }
     
     public boolean enableChild(int childIndex) {
+        if (children[childIndex].enabled) {
+            children[childIndex].markDirty();
+            return true;
+        }
+        
         if (!children[childIndex].subdivided) {
             children[childIndex].subdivide();
         }
         
-        if (children[childIndex].enabled) {
+        int vert1 = childIndex;
+        int vert2 = (childIndex + 1) % 4;
+        
+        if (!data.isEnabled(verts[vert1]) && enableVertexNeighbor(vert1)) {
+            recomputeNormal((2 * vert1 + 6) % 8);
+            recomputeNormal((2 * vert1 + 7) % 8);
+            markDirty();
+        }
+        
+        if (!data.isEnabled(verts[vert2]) && enableVertexNeighbor(vert2)) {
+            recomputeNormal((2 * vert2 + 6) % 8);
+            recomputeNormal((2 * vert2 + 7) % 8);
+            markDirty();
+        }
+        
+        if (data.isEnabled(verts[vert1]) && data.isEnabled(verts[vert2])) {
+            children[childIndex].enabled = true;
+            recomputeChildNormals(childIndex);
             children[childIndex].markDirty();
-            return true;
-        } else if (enableVertexNeighbor(childIndex) && enableVertexNeighbor((childIndex + 1) % 4)) {
-            children[childIndex].markDirty();
-            data.setEnabled(verts[childIndex], true);
-            data.setEnabled(verts[(childIndex + 1) % 4], true);
-            data.setEnabled(children[childIndex].verts[4], true);
             data.incDependencyCount(verts[childIndex]);
             data.incDependencyCount(verts[(childIndex + 1) % 4]);
-            children[childIndex].enabled = true;
+            data.setEnabled(children[childIndex].verts[4], true);
             return true;
         } else {
             return false;
         }
     }
     
+    public void disableChild(int childIndex) {
+        children[childIndex].merge();
+        children[childIndex].enabled = false;
+        recomputeChildNormals(childIndex);
+        data.decDependencyCount(verts[childIndex]);
+        data.decDependencyCount(verts[(childIndex + 1) % 4]);
+        data.setEnabled(children[childIndex].verts[4], false);
+    }
+    
     public void notifyVertexDisable(int vertIndex) {
-        if (neighbors[vertIndex] == NULL_NEIGHBOR) {
-            data.setEnabled(verts[vertIndex], false);
-            neighbors[vertIndex].markDirty();
-        } else if (neighbors[vertIndex] != null) {
-            data.setEnabled(verts[vertIndex], false);
+        data.setEnabled(verts[vertIndex], false);
+        if (neighbors[vertIndex] != NULL_NEIGHBOR) {
             neighbors[vertIndex].recomputeNormal((2 * vertIndex + 2) % 8);
             neighbors[vertIndex].recomputeNormal((2 * vertIndex + 3) % 8);
             neighbors[vertIndex].markDirty();
@@ -348,6 +371,31 @@ public class QuadSquare {
         }
     }
     
+    public void recomputeChildNormals(int childIndex) {
+        int normIndex1 = (2 * childIndex) % 8;
+        int normIndex2 = (2 * childIndex + 7) % 8;
+        QuadSquare child = children[childIndex];
+        if (child.enabled) {
+            data.removeNormal(normals[normIndex1], weights[normIndex1],
+                                verts[childIndex], corners[childIndex], verts[4]);
+            data.removeNormal(normals[normIndex2], weights[normIndex2],
+                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
+            for (int i = 0; i < child.normals.length; i++) {
+                data.addNormal(child.normals[i], child.weights[i],
+                                child.corners[((i + 1) / 2) % 4]);
+            }
+        } else {
+            for (int i = 0; i < child.normals.length; i++) {
+                data.removeNormal(child.normals[i], child.weights[i],
+                                child.corners[((i + 1) / 2) % 4]);
+            }
+            data.addNormal(normals[normIndex1], weights[normIndex1],
+                                verts[childIndex], corners[childIndex], verts[4]);
+            data.addNormal(normals[normIndex2], weights[normIndex2],
+                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
+        }
+    }
+    
     public void recomputeNormal(int normalIndex) {
         int cornerIndex = ((normalIndex + 1) / 2) % 4;
         data.removeNormal(normals[normalIndex], weights[normalIndex],
@@ -362,8 +410,8 @@ public class QuadSquare {
                             verts[vertIndex].getY() - verts[4].getY(),
                             data.getHeight(verts[vertIndex]) - data.getHeight(verts[4]));
         } else {
-            float avg = 0.5f * data.getHeight(corners[cornerIndex]) +
-                        0.5f * data.getHeight(corners[(cornerIndex + 1) % 4]);
+            float avg = 0.5f * data.getHeight(corners[vertIndex]) +
+                        0.5f * data.getHeight(corners[(vertIndex + 3) % 4]);
             v2 = new Vec3D(verts[vertIndex].getX() - verts[4].getX(),
                             verts[vertIndex].getY() - verts[4].getY(),
                             avg - data.getHeight(verts[4]));
@@ -427,11 +475,7 @@ public class QuadSquare {
             float toZ = (data.getHeight(verts[4]) - z) / dist;
             float dot = Math.max(0, toX * vx + toY * vy + toZ * vz);
             if (dot * data.getError(verts[4]) * DETAIL_THRESHOLD <= dist) {
-                merge();
-                enabled = false;
-                data.decDependencyCount(corners[(index + 1) % 4]);
-                data.decDependencyCount(corners[(index + 3) % 4]);
-                data.setEnabled(verts[4], false);
+                parent.disableChild(index);
             }
         }
         
@@ -464,7 +508,7 @@ public class QuadSquare {
         }
     }
     
-    public void render() {
+    public void render2() {
         if (mesh == null) {
             mesh = new MeshView(new TriangleMesh());
             //mesh.setDrawMode(DrawMode.LINE);
@@ -534,6 +578,187 @@ public class QuadSquare {
             squareMesh.getTexCoords().clear();
             squareMesh.getFaces().clear();
             squareMesh.getFaceSmoothingGroups().clear();
+            meshGroup.getChildren().remove(1, meshGroup.getChildren().size());
+        }
+        isDirty = false;
+    }
+    
+    public void render() {
+        if (!isDirty) {
+            return;
+        }
+        
+        if (mesh == null) {
+            mesh = new MeshView(new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD));
+            //mesh.setDrawMode(DrawMode.LINE);
+            meshGroup.getChildren().add(mesh);
+            if (parent != null) {
+                parent.meshGroup.getChildren().add(meshGroup);
+            }
+            if (!enabled) {
+                isDirty = false;
+                return;
+            }
+        }
+        
+        if (enabled) {
+            boolean connectPoints = false;
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getNormals().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            //squareMesh.getFaceSmoothingGroups().clear();
+            squareMesh.getTexCoords().addAll(0f, 0f);
+            ObservableFloatArray points = squareMesh.getPoints();
+            ObservableFloatArray norms = squareMesh.getNormals();
+            points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
+            
+            for (int i = 0; i < 4; i++) {
+                if (children[i] != null && children[i].enabled) {
+                    if (children[i].isDirty) {
+                        children[i].render();
+                    }
+                    connectPoints = false;
+                    if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        Vec3D normalized = Vec3D.normalize(normals[2 * i + 1]);
+                        norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                        connectPoints = true;
+                    }
+                } else {
+                    if (children[i] != null && children[i].isDirty) {
+                        children[i].render();
+                    }
+                    points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
+                    Vec3D normalized = Vec3D.normalize(normals[2 * i]);
+                    norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                    if (!connectPoints) {
+                        connectPoints = true;
+                    } else {
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, last - 2, 0, last - 1, last - 2, 0, last, last - 2, 0);
+                        //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+                    }
+                    if (data.isEnabled(verts[(i + 1) % 4])) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        normalized = Vec3D.normalize(normals[2 * i + 1]);
+                        norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, last - 2, 0, last - 1, last - 2, 0, last, last - 2, 0);
+                        //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+                    }
+                }
+            }
+            if (children[0] == null || !children[0].enabled) {
+                int last = (points.size() / 3) - 1;
+                squareMesh.getFaces().addAll(0, last - 1, 0, last, last - 1, 0, 1, last - 1, 0);
+                //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+            }
+            
+            mesh.setMesh(squareMesh);
+            if (points.size() <= 3) {
+                points.clear();
+            }
+        } else {
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getNormals().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            //squareMesh.getFaceSmoothingGroups().clear();
+            meshGroup.getChildren().remove(1, meshGroup.getChildren().size());
+        }
+        isDirty = false;
+    }
+    
+    public void render3() {
+        if (!isDirty) {
+            return;
+        }
+        
+        if (mesh == null) {
+            mesh = new MeshView(new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD));
+            //mesh.setDrawMode(DrawMode.LINE);
+            meshGroup.getChildren().add(mesh);
+            if (parent != null) {
+                parent.meshGroup.getChildren().add(meshGroup);
+            }
+            if (!enabled) {
+                isDirty = false;
+                return;
+            }
+        }
+        
+        if (enabled) {
+            boolean connectPoints = false;
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getNormals().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            //squareMesh.getFaceSmoothingGroups().clear();
+            squareMesh.getTexCoords().addAll(0f, 0f);
+            ObservableFloatArray points = squareMesh.getPoints();
+            ObservableFloatArray norms = squareMesh.getNormals();
+            points.addAll(verts[4].getX(), verts[4].getY(), data.getHeight(verts[4]));
+            Vec3D normalized = data.getNormal(verts[4]);
+            norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+            
+            for (int i = 0; i < 4; i++) {
+                if (children[i] != null && children[i].enabled) {
+                    if (children[i].isDirty) {
+                        children[i].render();
+                    }
+                    connectPoints = false;
+                    if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        normalized = data.getNormal(verts[(i + 1) % 4]);
+                        norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                        connectPoints = true;
+                    }
+                } else {
+                    if (children[i] != null && children[i].isDirty) {
+                        children[i].render();
+                    }
+                    points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
+                    normalized = data.getNormal(corners[i]);
+                    norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                    if (!connectPoints) {
+                        connectPoints = true;
+                    } else {
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, 0, 0, last - 1, last - 1, 0, last, last, 0);
+                        //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+                    }
+                    if (data.isEnabled(verts[(i + 1) % 4])) {
+                        points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
+                        normalized = data.getNormal(verts[(i + 1) % 4]);
+                        norms.addAll(normalized.getX(), normalized.getY(), normalized.getZ());
+                        int last = (points.size() / 3) - 1;
+                        squareMesh.getFaces().addAll(0, 0, 0, last - 1, last - 1, 0, last, last, 0);
+                        //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+                    }
+                }
+            }
+            if (children[0] == null || !children[0].enabled) {
+                int last = (points.size() / 3) - 1;
+                squareMesh.getFaces().addAll(0, 0, 0, last, last, 0, 1, 1, 0);
+                //squareMesh.getFaceSmoothingGroups().addAll(1 << squareMesh.getFaces().size());
+            }
+            
+            mesh.setMesh(squareMesh);
+            if (points.size() <= 3) {
+                points.clear();
+                norms.clear();
+            }
+        } else {
+            TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
+            squareMesh.getPoints().clear();
+            squareMesh.getNormals().clear();
+            squareMesh.getTexCoords().clear();
+            squareMesh.getFaces().clear();
+            //squareMesh.getFaceSmoothingGroups().clear();
             meshGroup.getChildren().remove(1, meshGroup.getChildren().size());
         }
         isDirty = false;
@@ -666,6 +891,10 @@ public class QuadSquare {
             for (Coordinate c : cs) {
                 vertices.get(c).addNormal(normal, weight);
             }
+        }
+        
+        Vec3D getNormal(Coordinate c) {
+            return vertices.get(c).getNormal();
         }
         
         void removeNormal(Vec3D normal, float weight, Coordinate ... cs) {
