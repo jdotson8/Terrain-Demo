@@ -22,6 +22,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
@@ -210,6 +211,11 @@ public class TerrainController extends AnimationTimer implements Initializable {
         root.getChildren().add(terrain);
         MeshView brute = new MeshView(mesh);
         brute.setMaterial(new PhongMaterial(Color.RED));
+//        PointLight light = new PointLight(Color.WHITE);
+//        light.setTranslateX(1000);
+//        light.setTranslateZ(500);
+//        light.getScope().add(terrain);
+//        root.getChildren().add(light);
         //brute.setDrawMode(DrawMode.LINE);
         //root.getChildren().add(brute);
 //        for (int i = 0; i < 50; i += 2) {
@@ -263,20 +269,20 @@ public class TerrainController extends AnimationTimer implements Initializable {
         }
         if (inputMap.get(KeyCode.SPACE)) {
             //Transform t = cameraTransform.getLocalToSceneTransform();
-            test.test();
-            //System.out.println(cameraX.getValue() + " " + cameraY.getValue());
+            //test.test();
+            System.out.println(cameraX.getValue() + " " + cameraY.getValue());
             //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
             inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
-            if (service.getState() != Worker.State.RUNNING) {
-                test.render();
-                service.restart();
-            }
+//            if (service.getState() != Worker.State.RUNNING) {
+//                test.render();
+//                service.restart();
+//            }
             update = !update;
             inputMap.put(KeyCode.R, false);
         }
-        if (service.getState() != Worker.State.RUNNING) {
+        if (update && service.getState() != Worker.State.RUNNING) {
                 test.render();
                 service.restart();
         } else {
