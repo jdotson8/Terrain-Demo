@@ -39,4 +39,8 @@ public class Coordinate {
         Coordinate c = (Coordinate)o;
         return x == c.x && y == c.y;
     }
+    
+    public String toString() {
+        return x + " " + y;
+    }
 }

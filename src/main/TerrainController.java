@@ -275,10 +275,10 @@ public class TerrainController extends AnimationTimer implements Initializable {
             inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
-//            if (service.getState() != Worker.State.RUNNING) {
-//                test.render();
-//                service.restart();
-//            }
+            if (service.getState() != Worker.State.RUNNING) {
+                test.render();
+                service.restart();
+            }
             update = !update;
             inputMap.put(KeyCode.R, false);
         }
