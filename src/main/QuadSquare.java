@@ -398,6 +398,7 @@ public class QuadSquare {
             data.addNormal(normals[normIndex2], weights[normIndex2],
                                 verts[childIndex], corners[childIndex], verts[4]);
         }
+        child.notifyNormalsChange();
     }
     
     public void recomputeNormal(int normalIndex) {
@@ -426,6 +427,58 @@ public class QuadSquare {
         weights[normalIndex] = normals[normalIndex].magnitude();
         data.addNormal(normals[normalIndex], weights[normalIndex],
                         corners[cornerIndex], verts[vertIndex], verts[4]);
+        switch(normalIndex) {
+            case 0:
+                notifyNormalChange(0, 1);
+                break;
+            case 1:
+                notifyNormalChange(2, 0);
+                break;
+            case 2:
+                notifyNormalChange(1, 2);
+                break;
+            case 3:
+                notifyNormalChange(3, 1);
+                break;
+            case 4:
+                notifyNormalChange(2, 3);
+                break;
+            case 5:
+                notifyNormalChange(0, 2);
+                break;
+            case 6:
+                notifyNormalChange(3, 0);
+                break;
+            case 7:
+                notifyNormalChange(1, 3);
+                break;
+        }
+    }
+    
+    public void notifyNormalsChange() {
+        for (int i = 0; i < neighbors.length; i++) {
+            QuadSquare neighbor = getNeighbor(i);
+            if (neighbor != null && neighbor != NULL_NEIGHBOR) {
+                if (neighbor.enabled) {
+                    neighbor.markDirty();
+                }
+                neighbor.notifyNormalChange((i + 1) % 4, (i + 2) % 4);
+            }
+        }
+    }
+    
+    public void notifyNormalChange(int neighborIndex, int cornerIndex) {
+        QuadSquare neighbor = getNeighbor(neighborIndex);
+        if (neighbor != null && neighbor != NULL_NEIGHBOR) {
+            if (neighbor.enabled) {
+                if (neighbor.children[cornerIndex] != null && neighbor.children[cornerIndex].enabled) {
+                    neighbor = neighbor.children[cornerIndex];
+                }
+                neighbor.markDirty();
+            } else if (parent != null && parent != neighbor.parent) {
+                neighbor.parent.markDirty();
+            }
+        }
     }
     
     public void markDirty() {
@@ -512,7 +565,7 @@ public class QuadSquare {
         }
     }
     
-    public void render2() {
+    public void render3() {
         if (mesh == null) {
             mesh = new MeshView(new TriangleMesh());
             //mesh.setDrawMode(DrawMode.LINE);
@@ -587,7 +640,7 @@ public class QuadSquare {
         isDirty = false;
     }
     
-    public void render3() {
+    public void render() {
         if (!isDirty) {
             return;
         }
@@ -676,7 +729,7 @@ public class QuadSquare {
         isDirty = false;
     }
     
-    public void render() {
+    public void render(Color c) {
         if (!isDirty) {
             return;
         }
@@ -694,6 +747,7 @@ public class QuadSquare {
             }
         }
         
+        mesh.setMaterial(new PhongMaterial(c));
         if (enabled) {
             boolean connectPoints = false;
             TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
@@ -712,7 +766,7 @@ public class QuadSquare {
             for (int i = 0; i < 4; i++) {
                 if (children[i] != null && children[i].enabled) {
                     //if (children[i].isDirty) {
-                        children[i].render();
+                        children[i].render(c);
                     //}
                     connectPoints = false;
                     if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
@@ -723,7 +777,7 @@ public class QuadSquare {
                     }
                 } else {
                     if (children[i] != null) {// && children[i].isDirty) {
-                        children[i].render();
+                        children[i].render(c);
                     }
                     points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
                     normalized = data.getNormal(corners[i]);
@@ -775,8 +829,28 @@ public class QuadSquare {
         return (float)Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff); 
     }
     
-    public void test() {
-        System.out.println(data.vertices.mappingCount());
+    public void test(TriangleMesh normals, TriangleMesh lights, float x, float y, float z) {
+        ObservableFloatArray normalPoints = normals.getPoints();
+        normalPoints.clear();
+        normals.getFaces().clear();
+        ObservableFloatArray lightPoints = lights.getPoints();
+        lightPoints.clear();
+        lights.getFaces().clear();
+        for (Coordinate vert : data.vertices.keySet()) {
+            if (data.isEnabled(vert)) {
+                Vec3D point = new Vec3D(vert.getX(), vert.getY(), data.getHeight(vert));
+                Vec3D normal = Vec3D.add(point, data.getNormal(vert).normalize().mult(2f));
+                Vec3D light = Vec3D.add(point, (new Vec3D(point.getX(), point.getY(), point.getZ(), x, y, z)).normalize());
+                normalPoints.addAll(point.getX(), point.getY(), point.getZ());
+                lightPoints.addAll(point.getX(), point.getY(), point.getZ());
+                normalPoints.addAll(normal.getX(), normal.getY(), normal.getZ());
+                lightPoints.addAll(light.getX(), light.getY(), light.getZ());
+                int index1 = (normalPoints.size() / 3) - 1;
+                int index2 = (lightPoints.size() / 3) - 1;
+                normals.getFaces().addAll(index1 - 1, 0, index1 - 1, 0, index1, 0);
+                lights.getFaces().addAll(index2 - 1, 0, index2 - 1, 0, index2, 0);
+            }
+        }
     }
     
     public String toString() {

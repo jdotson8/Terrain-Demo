@@ -26,6 +26,12 @@ public class Vec3D {
         z = pZ;
     }
     
+    public Vec3D(float xFrom, float yFrom, float zFrom, float xTo, float yTo, float zTo) {
+        x = xTo - xFrom;
+        y = yTo - yFrom;
+        z = zTo - zFrom;
+    }
+    
     public Vec3D add(Vec3D vec) {
         x += vec.x;
         y += vec.y;

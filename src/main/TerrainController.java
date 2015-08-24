@@ -19,6 +19,7 @@ import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
@@ -82,6 +83,10 @@ public class TerrainController extends AnimationTimer implements Initializable {
     Color c = new Color(1, 0, 0, 1);
     
     Service service;
+    PointLight light;
+    
+    MeshView normals = new MeshView(new TriangleMesh());
+    MeshView lights = new MeshView(new TriangleMesh());
 
 
     /**
@@ -149,7 +154,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         yaw = new SimpleDoubleProperty(0);
         cameraX = new SimpleDoubleProperty(0);
         cameraY = new SimpleDoubleProperty(0);
-        cameraZ = new SimpleDoubleProperty(100);
+        cameraZ = new SimpleDoubleProperty(300);
         
         cameraTransform = new TransformLayer();
         cameraTransform.rxProperty().bind(new DoubleBinding() {
@@ -193,29 +198,40 @@ public class TerrainController extends AnimationTimer implements Initializable {
         //noise.addNoiseLayer(1, 0.1, "x");
         test = new QuadSquare(512, noise);
         terrain.getChildren().add(test.getMeshGroup());
-        mesh = new TriangleMesh();
-        mesh.getTexCoords().addAll(0f, 0f);
-        for (int i = -50; i < 50; i++) {
-            for (int j = -50; j < 50; j++) {
-                mesh.getPoints().addAll(i, j, (float)noise.getValue(i, j));
-            }
-        }
-        
-        for (int i = 0; i < 99; i++) {
-            for (int j = 0; j < 99; j++) {
-                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+i, 0, (j+1)*100+(i+1), 0);
-                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+(i+1), 0, j*100+(i+1), 0);
-            }
-        }
+//        mesh = new TriangleMesh();
+//        mesh.getTexCoords().addAll(0f, 0f);
+//        for (int i = -50; i < 50; i++) {
+//            for (int j = -50; j < 50; j++) {
+//                mesh.getPoints().addAll(i, j, (float)noise.getValue(i, j));
+//            }
+//        }
+//        
+//        for (int i = 0; i < 99; i++) {
+//            for (int j = 0; j < 99; j++) {
+//                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+i, 0, (j+1)*100+(i+1), 0);
+//                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+(i+1), 0, j*100+(i+1), 0);
+//            }
+//        }
         
         root.getChildren().add(terrain);
         MeshView brute = new MeshView(mesh);
         brute.setMaterial(new PhongMaterial(Color.RED));
-//        PointLight light = new PointLight(Color.WHITE);
-//        light.setTranslateX(1000);
-//        light.setTranslateZ(500);
-//        light.getScope().add(terrain);
-//        root.getChildren().add(light);
+        light = new PointLight(Color.WHITE);
+        light.setTranslateX(1000);
+        light.setTranslateZ(1000);
+        light.getScope().add(terrain);
+        root.getChildren().add(light);
+        
+        
+        ((TriangleMesh)normals.getMesh()).getTexCoords().addAll(0f,0f);
+        ((TriangleMesh)lights.getMesh()).getTexCoords().addAll(0f,0f);
+        AmbientLight noshade = new AmbientLight(Color.WHITE);
+        noshade.getScope().addAll(normals, lights);
+        normals.setDrawMode(DrawMode.LINE);
+        lights.setDrawMode(DrawMode.LINE);
+        normals.setMaterial(new PhongMaterial(Color.RED));
+        lights.setMaterial(new PhongMaterial(Color.BLUE));
+        root.getChildren().addAll(normals, lights, noshade);
         //brute.setDrawMode(DrawMode.LINE);
         //root.getChildren().add(brute);
 //        for (int i = 0; i < 50; i += 2) {
@@ -265,25 +281,36 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get())));
         }
         if (inputMap.get(KeyCode.SHIFT)) {
-            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
+            light.setTranslateZ(light.getTranslateZ() - 10);
+            //cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
+            light.setTranslateZ(light.getTranslateZ() + 10);
             //Transform t = cameraTransform.getLocalToSceneTransform();
             //test.test();
-            System.out.println(cameraX.getValue() + " " + cameraY.getValue());
+            //System.out.println(cameraX.getValue() + " " + cameraY.getValue());
             //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
             inputMap.put(KeyCode.SPACE, false);
         }
         if (inputMap.get(KeyCode.R)) {
-            if (service.getState() != Worker.State.RUNNING) {
-                test.render();
-                service.restart();
+//            if (service.getState() != Worker.State.RUNNING) {
+//                c = c.deriveColor(20, 1, 1, 1);
+//                test.render(c);
+//                service.restart();
+//            }
+            if (update) {
+                root.getChildren().removeAll(normals, lights);
+            } else {
+                root.getChildren().addAll(normals, lights);
             }
             update = !update;
             inputMap.put(KeyCode.R, false);
         }
-        if (update && service.getState() != Worker.State.RUNNING) {
-                test.render();
+        if (service.getState() != Worker.State.RUNNING) {
+                c = c.deriveColor(0.5, 1, 1, 1);
+                test.render(c);
+                if (update)
+                test.test((TriangleMesh)normals.getMesh(), (TriangleMesh)lights.getMesh(), (float)light.getTranslateX(), (float)light.getTranslateY(), (float)light.getTranslateZ());
                 service.restart();
         } else {
             //System.out.println(service.getState());
