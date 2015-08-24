@@ -456,18 +456,36 @@ public class QuadSquare {
     }
     
     public void notifyNormalsChange() {
-        for (int i = 0; i < neighbors.length; i++) {
-            QuadSquare neighbor = getNeighbor(i);
-            if (neighbor != null && neighbor != NULL_NEIGHBOR) {
-                if (neighbor.enabled) {
-                    neighbor.markDirty();
-                }
-                neighbor.notifyNormalChange((i + 1) % 4, (i + 2) % 4);
+        QuadSquare neighbor1 = parent.notifyNormalChange(index, (index + 1) % 4);
+        QuadSquare neighbor2 = parent.notifyNormalChange((index + 1) % 4, (index + 3) % 4);
+        if (neighbor1 != null && neighbor2 != null) {
+            if (neighbor1.level >= neighbor2.level) {
+                neighbor1.notifyNormalChange((index + 1) % 4, (index + 2) % 4);
+            } else {
+                neighbor2.notifyNormalChange(index, (index + 2) % 4);
             }
+        } else if (neighbor1 != null) {
+            neighbor1.notifyNormalChange((index + 1) % 4, (index + 2) % 4);
+        } else if (neighbor2 != null) {
+            neighbor2.notifyNormalChange(index, (index + 2) % 4);
+        } else {
+            return;
+        }
+        neighbor1 = getNeighbor((index + 3) % 4);
+        neighbor2 = getNeighbor((index + 2) % 4);
+        if (neighbor1 != null && neighbor1.enabled) {
+            neighbor1.markDirty();
+            neighbor1.notifyNormalChange(index, (index + 1) % 4);
+            neighbor1.notifyNormalChange((index + 2) % 4, index);
+        }
+        if (neighbor2 != null && neighbor2.enabled) {
+            neighbor2.markDirty();
+            neighbor2.notifyNormalChange((index + 1) % 4, (index + 3) % 4);
+            neighbor2.notifyNormalChange((index + 3) % 4, index);
         }
     }
     
-    public void notifyNormalChange(int neighborIndex, int cornerIndex) {
+    public QuadSquare notifyNormalChange(int neighborIndex, int cornerIndex) {
         QuadSquare neighbor = getNeighbor(neighborIndex);
         if (neighbor != null && neighbor != NULL_NEIGHBOR) {
             if (neighbor.enabled) {
@@ -475,10 +493,13 @@ public class QuadSquare {
                     neighbor = neighbor.children[cornerIndex];
                 }
                 neighbor.markDirty();
+                return neighbor;
             } else if (parent != null && parent != neighbor.parent) {
                 neighbor.parent.markDirty();
+                return neighbor.parent;
             }
         }
+        return null;
     }
     
     public void markDirty() {
@@ -747,7 +768,7 @@ public class QuadSquare {
             }
         }
         
-        mesh.setMaterial(new PhongMaterial(c));
+        //mesh.setMaterial(new PhongMaterial(c));
         if (enabled) {
             boolean connectPoints = false;
             TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
