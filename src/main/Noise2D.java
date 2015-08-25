@@ -144,6 +144,7 @@ public class Noise2D {
         for (NoiseLayer layer : noiseLayers) {
             value += layer.amplitude * sample(layer.frequency * x, layer.frequency * y);
         }
+        //try {Thread.sleep(20L);} catch(Exception e){}
         return value;
     }
     

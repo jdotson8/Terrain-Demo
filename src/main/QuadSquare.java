@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -916,12 +917,12 @@ public class QuadSquare {
                         for (int j = 0; j < child.verts.length - 1; j++) {
                             if (j == child.index) {
                                 QuadSquare neighbor = child.parent.getNeighbor(j);
-                                if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                                if (neighbor == NULL_NEIGHBOR || neighbor == null || !neighbor.enabled) {
                                     data.removeVertex(child.verts[j]);
                                 }
                             } else if (j == (child.index + 1) % 4) {
                                 QuadSquare neighbor = child.parent.getNeighbor(j);
-                                if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
+                                if (neighbor == NULL_NEIGHBOR || neighbor == null || !neighbor.enabled) {
                                     data.removeVertex(child.verts[j]);
                                 }
                             } else {

@@ -196,7 +196,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
         //noise.addNoiseLayer(1, 0.4, "x");
         noise.addNoiseLayer(1, 0.05, "x");
         //noise.addNoiseLayer(1, 0.1, "x");
-        test = new QuadSquare(512, noise);
+        test = new QuadSquare(2048, noise);
         terrain.getChildren().add(test.getMeshGroup());
 //        mesh = new TriangleMesh();
 //        mesh.getTexCoords().addAll(0f, 0f);
@@ -310,7 +310,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
                 c = c.deriveColor(0.5, 1, 1, 1);
                 test.render(c);
                 if (update)
-                test.test((TriangleMesh)normals.getMesh(), (TriangleMesh)lights.getMesh(), (float)light.getTranslateX(), (float)light.getTranslateY(), (float)light.getTranslateZ());
+                    //test.test((TriangleMesh)normals.getMesh(), (TriangleMesh)lights.getMesh(), (float)light.getTranslateX(), (float)light.getTranslateY(), (float)light.getTranslateZ());
                 service.restart();
         } else {
             //System.out.println(service.getState());
