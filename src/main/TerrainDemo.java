@@ -45,6 +45,12 @@ public class TerrainDemo extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
+        ArrayList<Float> testy = new ArrayList<>();
+        testy.add(8536.657f);
+        for (Float f : testy) {
+            System.out.println("WHOOOOAHHH " + f);
+        }
+        
         Coordinate a = new Coordinate(6f, 5f);
         Coordinate b = new Coordinate(6f, 5f);
         Coordinate c = new Coordinate(5f, 6f);

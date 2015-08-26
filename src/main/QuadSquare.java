@@ -95,23 +95,16 @@ public class QuadSquare {
             }
         }
         
-        for (int i = 0; i < normals.length; i += 2) {
-            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[(i / 2 + 1) % 4]);
-            Vec3D v1 = new Vec3D(corners[i / 2].getX() - verts[4].getX(),
-                                    corners[i / 2].getY() - verts[4].getY(),
-                                    data.getHeight(corners[i / 2]) - data.getHeight(verts[4]));
-            Vec3D v2 = new Vec3D(verts[(i / 2 + 1) % 4].getX() - verts[4].getX(),
-                                    verts[(i / 2 + 1) % 4].getY() - verts[4].getY(),
-                                    avg - data.getHeight(verts[4]));
-            Vec3D v3 = new Vec3D(corners[(i / 2 + 1) % 4].getX() - verts[4].getX(),
-                                    corners[(i / 2 + 1) % 4].getY() - verts[4].getY(),
-                                    data.getHeight(corners[(i / 2 + 1) % 4]) - data.getHeight(verts[4]));
-            normals[i] = Vec3D.cross(v1, v2).mult(0.5f);
-            weights[i] = normals[i].magnitude();
-            data.addNormal(normals[i], weights[i], corners[i / 2], verts[(i / 2 + 1) % 4], verts[4]);
-            normals[i + 1] = Vec3D.cross(v2, v3).mult(0.5f);
-            weights[i + 1] = normals[i + 1].magnitude();
-            data.addNormal(normals[i + 1], weights[i + 1], corners[(i / 2 + 1) % 4], verts[(i / 2 + 1) % 4], verts[4]);
+        Vec3D normal;
+        for (int i = 0; i < 2 * corners.length; i += 2) {
+            normal = computeNormal(i, false);
+            data.addNormal(normal, normal.magnitude(), corners[i / 2], verts[4]);
+            normal = computeNormal(i, true);
+            data.addNormal(normal, normal.magnitude(), verts[(i / 2 + 1) % 4]);
+            normal = computeNormal(i + 1, false);
+            data.addNormal(normal, normal.magnitude(), corners[(i / 2 + 1) % 4], verts[4]);
+            normal = computeNormal(i + 1, true);
+            data.addNormal(normal, normal.magnitude(), verts[(i / 2 + 1) % 4]);
         }
         
         subdivide();
@@ -175,23 +168,6 @@ public class QuadSquare {
                 }
             }
         }
-        
-        for (int i = 0; i < normals.length; i += 2) {
-            float avg = 0.5f * data.getHeight(corners[i / 2]) + 0.5f * data.getHeight(corners[(i / 2 + 1) % 4]);
-            Vec3D v1 = new Vec3D(corners[i / 2].getX() - verts[4].getX(),
-                                    corners[i / 2].getY() - verts[4].getY(),
-                                    data.getHeight(corners[i / 2]) - data.getHeight(verts[4]));
-            Vec3D v2 = new Vec3D(verts[(i / 2 + 1) % 4].getX() - verts[4].getX(),
-                                    verts[(i / 2 + 1) % 4].getY() - verts[4].getY(),
-                                    avg - data.getHeight(verts[4]));
-            Vec3D v3 = new Vec3D(corners[(i / 2 + 1) % 4].getX() - verts[4].getX(),
-                                    corners[(i / 2 + 1) % 4].getY() - verts[4].getY(),
-                                    data.getHeight(corners[(i / 2 + 1) % 4]) - data.getHeight(verts[4]));
-            normals[i] = Vec3D.cross(v1, v2).mult(0.5f);
-            weights[i] = normals[i].magnitude();
-            normals[i + 1] = Vec3D.cross(v2, v3).mult(0.5f);
-            weights[i + 1] = normals[i + 1].magnitude();
-        }
 
         meshGroup = new Group();
     }
@@ -221,28 +197,32 @@ public class QuadSquare {
                     }
                 }
                 
-                data.removeVertex(children[i].verts[4]);
                 for (int j = 0; j < verts.length - 1; j++) {
                     if (j == i) {
                         QuadSquare neighbor = getNeighbor(j);
                         if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
                             data.removeVertex(children[i].verts[j]);
                         } else {
-                            data.removeNormal(children[i].normals[(2 * j + 6) % 8], children[i].weights[(2 * j + 6) % 8], children[i].verts[j]);
-                            data.removeNormal(children[i].normals[(2 * j + 7) % 8], children[i].weights[(2 * j + 7) % 8], children[i].verts[j]);
+                            Vec3D normal = children[i].computeNormal((2 * j + 6) % 8, true);
+                            data.removeNormal(normal, normal.magnitude(), children[i].verts[j]);
+                            normal = children[i].computeNormal((2 * j + 7) % 8, true);
+                            data.removeNormal(normal, normal.magnitude(), children[i].verts[j]);
                         }
                     } else if (j == (i + 1) % 4) {
                         QuadSquare neighbor = getNeighbor(j);
                         if (neighbor == NULL_NEIGHBOR || !neighbor.enabled) {
                             data.removeVertex(children[i].verts[j]);
                         } else {
-                            data.removeNormal(children[i].normals[(2 * j + 6) % 8], children[i].weights[(2 * j + 6) % 8], children[i].verts[j]);
-                            data.removeNormal(children[i].normals[(2 * j + 7) % 8], children[i].weights[(2 * j + 7) % 8], children[i].verts[j]);
+                            Vec3D normal = children[i].computeNormal((2 * j + 6) % 8, true);
+                            data.removeNormal(normal, normal.magnitude(), children[i].verts[j]);
+                            normal = children[i].computeNormal((2 * j + 7) % 8, true);
+                            data.removeNormal(normal, normal.magnitude(), children[i].verts[j]);
                         }
                     } else {
                         data.removeVertex(children[i].verts[j]);
                     }
                 }
+                data.removeVertex(children[i].verts[4]);
                 children[i] = null;
             } else {
                 int localX = ((i % 3) == 0) ? 1 : -1;
@@ -376,42 +356,17 @@ public class QuadSquare {
         }
     }
     
-    public void recomputeChildNormals(int childIndex) {
-        int normIndex1 = (2 * childIndex) % 8;
-        int normIndex2 = (2 * childIndex + 7) % 8;
-        QuadSquare child = children[childIndex];
-        if (child.enabled) {
-            data.removeNormal(normals[normIndex1], weights[normIndex1],
-                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
-            data.removeNormal(normals[normIndex2], weights[normIndex2],
-                                verts[childIndex], corners[childIndex], verts[4]);
-            for (int i = 0; i < child.normals.length; i++) {
-                data.addNormal(child.normals[i], child.weights[i],
-                                child.corners[((i + 1) / 2) % 4]);
-            }
-        } else {
-            for (int i = 0; i < child.normals.length; i++) {
-                data.removeNormal(child.normals[i], child.weights[i],
-                                child.corners[((i + 1) / 2) % 4]);
-            }
-            data.addNormal(normals[normIndex1], weights[normIndex1],
-                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
-            data.addNormal(normals[normIndex2], weights[normIndex2],
-                                verts[childIndex], corners[childIndex], verts[4]);
-        }
-        child.notifyNormalsChange();
-    }
-    
-    public void recomputeNormal(int normalIndex) {
+    public Vec3D computeNormal(int normalIndex, boolean vertEnabled) {
         int cornerIndex = ((normalIndex + 1) / 2) % 4;
         int vertIndex = (normalIndex % 2 == 0) ? (cornerIndex + 1) % 4 : cornerIndex;
-        data.removeNormal(normals[normalIndex], weights[normalIndex],
-                            corners[cornerIndex], verts[vertIndex], verts[4]);
+//        if (verts[vertIndex].getX() == 120 && verts[vertIndex].getY() == 64 && normalIndex == 0) {
+//            int i = 0;
+//        }
         Vec3D v1 = new Vec3D(corners[cornerIndex].getX() - verts[4].getX(),
                                 corners[cornerIndex].getY() - verts[4].getY(),
                                 data.getHeight(corners[cornerIndex]) - data.getHeight(verts[4]));
         Vec3D v2;
-        if (data.isEnabled(verts[vertIndex])) {
+        if (vertEnabled) {
             v2 = new Vec3D(verts[vertIndex].getX() - verts[4].getX(),
                             verts[vertIndex].getY() - verts[4].getY(),
                             data.getHeight(verts[vertIndex]) - data.getHeight(verts[4]));
@@ -422,12 +377,49 @@ public class QuadSquare {
                             verts[vertIndex].getY() - verts[4].getY(),
                             avg - data.getHeight(verts[4]));
         }
-        normals[normalIndex] = (normalIndex % 2 == 0) ?
-                                Vec3D.cross(v1, v2).mult(0.5f) :
-                                Vec3D.cross(v2, v1).mult(0.5f);
-        weights[normalIndex] = normals[normalIndex].magnitude();
-        data.addNormal(normals[normalIndex], weights[normalIndex],
-                        corners[cornerIndex], verts[vertIndex], verts[4]);
+        return (normalIndex % 2 == 0) ?
+                Vec3D.cross(v1, v2).mult(0.5f) :
+                Vec3D.cross(v2, v1).mult(0.5f);
+    }
+    
+    public void recomputeChildNormals(int childIndex) {
+        Vec3D normal1 = computeNormal((2 * childIndex + 7) % 8, true);
+        Vec3D normal2 = computeNormal((2 * childIndex) % 8, true);
+        Vec3D childNormal;
+        QuadSquare child = children[childIndex];
+        if (child.enabled) {
+            data.removeNormal(normal1, normal1.magnitude(),
+                                verts[childIndex], corners[childIndex], verts[4]);
+            data.removeNormal(normal2, normal2.magnitude(),
+                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
+            for (int i = 0; i < 2 * child.corners.length; i++) {
+                childNormal = child.computeNormal(i, false);
+                data.addNormal(childNormal, childNormal.magnitude(),
+                                child.corners[((i + 1) / 2) % 4], child.verts[4]);
+            }
+        } else {
+            for (int i = 0; i < 2 * child.corners.length; i++) {
+                childNormal = child.computeNormal(i, false);
+                data.removeNormal(childNormal, childNormal.magnitude(),
+                                    child.corners[((i + 1) / 2) % 4], child.verts[4]);
+            }
+            data.addNormal(normal1, normal1.magnitude(),
+                                verts[childIndex], corners[childIndex], verts[4]);
+            data.addNormal(normal2, normal2.magnitude(),
+                                verts[(childIndex + 1) % 4], corners[childIndex], verts[4]);
+        }
+        child.notifyNormalsChange();
+    }
+    
+    public void recomputeNormal(int normalIndex) {
+        int cornerIndex = ((normalIndex + 1) / 2) % 4;
+        int vertIndex = (normalIndex % 2 == 0) ? (cornerIndex + 1) % 4 : cornerIndex;
+        Vec3D normal = computeNormal(normalIndex, !data.isEnabled(verts[vertIndex]));
+        data.removeNormal(normal, normal.magnitude(),
+                            corners[cornerIndex], verts[4]);
+        normal = computeNormal(normalIndex, data.isEnabled(verts[vertIndex]));
+        data.addNormal(normal, normal.magnitude(),
+                        corners[cornerIndex], verts[4]);
         switch(normalIndex) {
             case 0:
                 notifyNormalChange(0, 1);
@@ -951,11 +943,14 @@ public class QuadSquare {
                     QuadSquare child = futureChild.get();
                     if (child.parent != null) {
                         child.parent.children[child.index] = child;
-                        for (int i =  0; i < child.normals.length; i += 2) {
-                            addNormal(child.normals[i], child.weights[i],
-                                        child.verts[(i / 2 + 1) % 4], child.verts[4]);
-                            addNormal(child.normals[i + 1], child.weights[i + 1],
-                                        child.verts[(i / 2 + 1) % 4], child.verts[4]);
+                        Vec3D normal;
+                        for (int i =  0; i < 2 * child.corners.length; i += 2) {
+                            normal = child.computeNormal(i, true);
+                            addNormal(normal, normal.magnitude(),
+                                        child.verts[(i / 2 + 1) % 4]);
+                            normal = child.computeNormal(i + 1, true);
+                            addNormal(normal, normal.magnitude(),
+                                        child.verts[(i / 2 + 1) % 4]);
                         }
                         quadSquareBuffer.remove(center);
                         return true;
@@ -994,8 +989,10 @@ public class QuadSquare {
         }
         
         void addNormal(Vec3D normal, float weight, Coordinate ... cs) {
+            int i = 1;
             for (Coordinate c : cs) {
                 vertices.get(c).addNormal(normal, weight);
+                i++;
             }
         }
         
