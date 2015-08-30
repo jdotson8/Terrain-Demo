@@ -39,6 +39,7 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
 import javafx.scene.transform.MatrixType;
 import javafx.scene.transform.Transform;
 import main.TransformLayer.RotateOrder;
@@ -81,6 +82,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
     TriangleMesh mesh;
     Random r = new Random();
     Color c = new Color(1, 0, 0, 1);
+    float angle = 90f;
     
     Service service;
     PointLight light;
@@ -188,6 +190,11 @@ public class TerrainController extends AnimationTimer implements Initializable {
         long seed = r.nextLong();
         System.out.println("Seed: " + seed);
         Noise2D noise = new Noise2D(-4402001516981054855L);
+        TextureSampler tex = new TextureSampler(0f, 0f);
+        tex.addTexture("grass.jpg", -500, 15, 0.75f, 1, 128);
+        tex.addTexture("dirt.jpg", -500, 15, 0f, 0.75f, 128);
+        tex.addTexture("snow.jpg", 15, 50, 0.75f, 1, 128);
+        tex.addTexture("stone.jpg", 15, 50, 0f, 0.75f, 128);
         Noise2D noise2 = new Noise2D(seed);
         noise.addNoiseLayer(30, 0.005, "x");
         noise.addNoiseLayer(2, 0.03, "x");
@@ -196,30 +203,31 @@ public class TerrainController extends AnimationTimer implements Initializable {
         //noise.addNoiseLayer(1, 0.4, "x");
         noise.addNoiseLayer(1, 0.05, "x");
         //noise.addNoiseLayer(1, 0.1, "x");
-        test = new QuadSquare(512, noise);
+        test = new QuadSquare(512, noise, tex);
         terrain.getChildren().add(test.getMeshGroup());
-//        mesh = new TriangleMesh();
+//        mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
 //        mesh.getTexCoords().addAll(0f, 0f);
-//        for (int i = -50; i < 50; i++) {
-//            for (int j = -50; j < 50; j++) {
-//                mesh.getPoints().addAll(i, j, (float)noise.getValue(i, j));
+//        mesh.getNormals().addAll((float)Math.cos(Math.toRadians(angle)), 0, (float)Math.sin(Math.toRadians(angle)));
+//        for (int i = -64; i < 64; i++) {
+//            for (int j = -64; j < 64; j++) {
+//                mesh.getPoints().addAll(10 * i, 10 * j, (float)noise.getValue(10 * i, 10 * j));
 //            }
 //        }
 //        
-//        for (int i = 0; i < 99; i++) {
-//            for (int j = 0; j < 99; j++) {
-//                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+i, 0, (j+1)*100+(i+1), 0);
-//                mesh.getFaces().addAll(j*100+i, 0, (j+1)*100+(i+1), 0, j*100+(i+1), 0);
+//        for (int i = 0; i < 127; i++) {
+//            for (int j = 0; j < 127; j++) {
+//                mesh.getFaces().addAll(j*128+i, 0, 0, (j+1)*128+i, 0, 0, (j+1)*128+(i+1), 0, 0);
+//                mesh.getFaces().addAll(j*128+i, 0, 0, (j+1)*128+(i+1), 0, 0, j*128+(i+1), 0, 0);
 //            }
 //        }
         
         root.getChildren().add(terrain);
-        MeshView brute = new MeshView(mesh);
-        brute.setMaterial(new PhongMaterial(Color.RED));
+        //MeshView brute = new MeshView(mesh);
+        //brute.setMaterial(new PhongMaterial(Color.RED));
         light = new PointLight(Color.WHITE);
         light.setTranslateX(1000);
         light.setTranslateZ(1000);
-        light.getScope().add(terrain);
+        light.getScope().addAll(terrain);
         root.getChildren().add(light);
         
         
@@ -253,6 +261,7 @@ public class TerrainController extends AnimationTimer implements Initializable {
                         float vy = (float) (Math.cos(pitch.get()) * Math.sin(yaw.get()));
                         float vz = (float) (Math.sin(pitch.get()));
                         test.update((float)cameraX.get(), (float)cameraY.get(), (float)cameraZ.get(), vx, vy, vz);
+                        test.updateTextures();
                         return null;
                     }
                 };
@@ -315,9 +324,6 @@ public class TerrainController extends AnimationTimer implements Initializable {
         } else {
             //System.out.println(service.getState());
         }
-//        for (int i = 0; i < mesh.getPoints().size(); i ++) {
-//            mesh.getPoints().set(i, 50 * r.nextFloat());
-//        }
         long oldFrameTime = frameTimes[frameTimeIndex] ;
         frameTimes[frameTimeIndex] = now ;
         frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length ;
