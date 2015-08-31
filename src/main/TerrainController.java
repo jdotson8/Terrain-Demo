@@ -227,14 +227,14 @@ public class TerrainController extends AnimationTimer implements Initializable {
         light = new PointLight(Color.WHITE);
         light.setTranslateX(1000);
         light.setTranslateZ(1000);
-        light.getScope().addAll(terrain);
-        root.getChildren().add(light);
+        //light.getScope().addAll(terrain);
+        //root.getChildren().add(light);
         
         
         ((TriangleMesh)normals.getMesh()).getTexCoords().addAll(0f,0f);
         ((TriangleMesh)lights.getMesh()).getTexCoords().addAll(0f,0f);
         AmbientLight noshade = new AmbientLight(Color.WHITE);
-        noshade.getScope().addAll(normals, lights);
+        noshade.getScope().addAll(terrain, normals, lights);
         normals.setDrawMode(DrawMode.LINE);
         lights.setDrawMode(DrawMode.LINE);
         normals.setMaterial(new PhongMaterial(Color.RED));
