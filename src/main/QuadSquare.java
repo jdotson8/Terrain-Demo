@@ -40,8 +40,7 @@ import javafx.scene.shape.VertexFormat;
  * @author Administrator
  */
 public class QuadSquare {
-    private static final float DETAIL_THRESHOLD = 100;
-    private static int TEXTURE_RESOLUTION = 32;
+    private static final float DETAIL_THRESHOLD = 200;
     private static final QuadSquare NULL_NEIGHBOR = new QuadSquare();
     private SharedData data; 
     private QuadSquare parent;
@@ -466,12 +465,12 @@ public class QuadSquare {
         neighbor1 = getNeighbor((index + 3) % 4);
         neighbor2 = getNeighbor((index + 2) % 4);
         if (neighbor1 != null && neighbor1.enabled) {
-            neighbor1.markNormalsDirty();
+            neighbor1.markGeometryDirty();
             neighbor1.notifyNormalChange(index, (index + 1) % 4);
             neighbor1.notifyNormalChange((index + 2) % 4, index);
         }
         if (neighbor2 != null && neighbor2.enabled) {
-            neighbor2.markNormalsDirty();
+            neighbor2.markGeometryDirty();
             neighbor2.notifyNormalChange((index + 1) % 4, (index + 3) % 4);
             neighbor2.notifyNormalChange((index + 3) % 4, index);
         }
@@ -484,10 +483,10 @@ public class QuadSquare {
                 if (neighbor.children[cornerIndex] != null && neighbor.children[cornerIndex].enabled) {
                     neighbor = neighbor.children[cornerIndex];
                 }
-                neighbor.markNormalsDirty();
+                neighbor.markGeometryDirty();
                 return neighbor;
             } else if (parent != null && parent != neighbor.parent) {
-                neighbor.parent.markNormalsDirty();
+                neighbor.parent.markGeometryDirty();
                 return neighbor.parent;
             }
         }
@@ -667,14 +666,14 @@ public class QuadSquare {
     }
     
     public void updateTexture() {
-        texture = new WritableImage(TEXTURE_RESOLUTION, TEXTURE_RESOLUTION);
+        texture = new WritableImage(16, 16);
         PixelWriter textureWriter = ((WritableImage)texture).getPixelWriter();
-        for (int i = 0; i < TEXTURE_RESOLUTION; i++) {
-            for (int j = 0; j < TEXTURE_RESOLUTION; j++) {
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
                 float h1, h2, h3, h4;
                 Vec3D n1, n2, n3, n4;
-                if (j < TEXTURE_RESOLUTION / 2) {
-                    if (i < TEXTURE_RESOLUTION / 2) {
+                if (j < 16 / 2) {
+                    if (i < 16 / 2) {
                         h1 = data.getHeight(corners[1]);
                         n1 = data.getNormal(corners[1]);
                         if (data.isEnabled(verts[1])) {
@@ -714,7 +713,7 @@ public class QuadSquare {
                         }
                     }
                 } else {
-                    if (i < TEXTURE_RESOLUTION / 2) {
+                    if (i < 16 / 2) {
                         if (data.isEnabled(verts[2])) {
                             h1 = data.getHeight(verts[2]);
                             n1 = data.getNormal(verts[2]);
@@ -731,7 +730,7 @@ public class QuadSquare {
                             n4 = data.getNormal(verts[3]);
                         } else {
                             h4 = 0.5f * data.getHeight(corners[2]) + data.getHeight(corners[3]);
-                            n4 = Vec3D.lerp(data.getNormal(corners[2]), data.getNormal(corners[3]), 0.5f).normalize();
+                            n4 = Vec3D.lerp(data.getNormal(corners[3]), data.getNormal(corners[3]), 0.5f).normalize();
                         }
                     } else {
                         h1 = data.getHeight(verts[4]);
@@ -754,8 +753,8 @@ public class QuadSquare {
                         n4 = data.getNormal(corners[3]);
                     }
                 }
-                float tx = (i % (TEXTURE_RESOLUTION / 2)) / (TEXTURE_RESOLUTION / 2f);
-                float ty = (j % (TEXTURE_RESOLUTION / 2)) / (TEXTURE_RESOLUTION / 2f);
+                float tx = 1 - (i % (16 / 2)) / (16f / 2);
+                float ty = 1 - (j % (16 / 2)) / (16f / 2);
                 float height = ty * (tx * h1 + (1 - tx) * h2) + (1 - ty) * (tx * h3 + (1 - tx) * h4);
                 Vec3D slope = Vec3D.lerp(Vec3D.lerp(n1, n2, tx).normalize(), Vec3D.lerp(n3, n4, tx).normalize(), ty).normalize();
                 double value = Math.max(0, slope.dot((new Vec3D(0, 1f, 1f)).normalize()));
@@ -923,8 +922,8 @@ public class QuadSquare {
                             if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
                                 connectPoints = true;
                                 points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                                float tx = (i == 0 || i == 2) ? 0.5f : (i == 1) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
-                                float ty = (i == 1 || i == 3) ? 0.5f : (i == 0) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
+                                float tx = (i == 0 || i == 2) ? 0.5f : (i == 1) ? 0f : 1f;
+                                float ty = (i == 1 || i == 3) ? 0.5f : (i == 0) ? 0f : 1f;
                                 texCoords.addAll(tx, ty);
                             }
                         } else {
@@ -932,8 +931,8 @@ public class QuadSquare {
                                 children[i].render();
                             }
                             points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
-                            float tx = ((i % 3) != 0) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
-                            float ty = ((i & 2) == 0) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
+                            float tx = ((i % 3) != 0) ? 0f : 1f;
+                            float ty = ((i & 2) == 0) ? 0f : 1f;
                             texCoords.addAll(tx, ty);
                             if (!connectPoints) {
                                 connectPoints = true;
@@ -943,8 +942,8 @@ public class QuadSquare {
                             }
                             if (data.isEnabled(verts[(i + 1) % 4])) {
                                 points.addAll(verts[(i + 1) % 4].getX(), verts[(i + 1) % 4].getY(), data.getHeight(verts[(i + 1) % 4]));
-                                tx = (i == 0 || i == 2) ? 0.5f : (i == 1) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
-                                ty = (i == 1 || i == 3) ? 0.5f : (i == 0) ? 0.5f / TEXTURE_RESOLUTION : (TEXTURE_RESOLUTION - 0.5f) / TEXTURE_RESOLUTION;
+                                tx = (i == 0 || i == 2) ? 0.5f : (i == 1) ? 0f : 1f;
+                                ty = (i == 1 || i == 3) ? 0.5f : (i == 0) ? 0f : 1f;
                                 texCoords.addAll(tx, ty);
                                 int last = (points.size() / 3) - 1;
                                 squareMesh.getFaces().addAll(0, 0, last - 1, last - 1, last, last);
