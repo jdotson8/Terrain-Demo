@@ -307,8 +307,8 @@ public class TerrainController extends AnimationTimer implements Initializable {
             inputMap.put(KeyCode.R, false);
         }
         if (service.getState() != Worker.State.RUNNING) {
-                //c = c.deriveColor(0.5, 1, 1, 1);
-                test.render();
+                c = c.deriveColor(0.5, 1, 1, 1);
+                test.render(c);
                 if (update)
                     test.test((TriangleMesh)normals.getMesh(), (TriangleMesh)lights.getMesh(), (float)light.getTranslateX(), (float)light.getTranslateY(), (float)light.getTranslateZ());
                 service.restart();
