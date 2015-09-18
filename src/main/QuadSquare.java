@@ -60,7 +60,7 @@ public class QuadSquare {
     
     private Group meshGroup;
     private MeshView mesh;
-    private Image texture; //new Image(getClass().getResource("test.jpg").toExternalForm());;
+    private Image texture;
     
     private QuadSquare() {
         //Null neighbor;
@@ -742,9 +742,9 @@ public class QuadSquare {
                             h2 = 0.5f * data.getHeight(corners[0]) + data.getHeight(corners[3]);
                             n2 = Vec3D.lerp(data.getNormal(corners[0]), data.getNormal(corners[3]), 0.5f).normalize();
                         }
-                        if (data.isEnabled(verts[3])) {
-                            h3 = data.getHeight(verts[3]);
-                            n3 = data.getNormal(verts[3]);
+                        if (data.isEnabled(verts[2])) {
+                            h3 = data.getHeight(verts[2]);
+                            n3 = data.getNormal(verts[2]);
                         } else {
                             h3 = 0.5f * data.getHeight(corners[2]) + data.getHeight(corners[3]);
                             n3 = Vec3D.lerp(data.getNormal(corners[2]), data.getNormal(corners[3]), 0.5f).normalize();
@@ -753,16 +753,11 @@ public class QuadSquare {
                         n4 = data.getNormal(corners[3]);
                     }
                 }
-                float tx = 1 - (i % (16 / 2)) / (16f / 2);
-                float ty = 1 - (j % (16 / 2)) / (16f / 2);
+                float tx = (i % (16 / 2)) / (16 / 2);
+                float ty = (i % (16 / 2)) / (16 / 2);
                 float height = ty * (tx * h1 + (1 - tx) * h2) + (1 - ty) * (tx * h3 + (1 - tx) * h4);
-                Vec3D slope = Vec3D.lerp(Vec3D.lerp(n1, n2, tx).normalize(), Vec3D.lerp(n3, n4, tx).normalize(), ty).normalize();
-                double value = Math.max(0, slope.dot((new Vec3D(0, 1f, 1f)).normalize()));
-                Color color = new Color(value, value, value, 1);
-                //Color color = new Color()Color.BLACK.interpolate(Color.WHITE, Math.max(0, n1.dot((new Vec3D(0, 1f, 1f)).normalize())));
-                //System.out.println(color.getRed());
-                textureWriter.setColor(i, j, color);
-                //textureWriter.setColor(i, j, data.sampleTexture(verts[0].getX() + (i / 16) * size, verts[0].getY() + (j / 16) * size, height, slope.getZ()));
+                float slope = Vec3D.lerp(Vec3D.lerp(n1, n2, tx).normalize(), Vec3D.lerp(n3, n4, tx).normalize(), ty).normalize().getZ();
+                textureWriter.setColor(i, j, data.sampleTexture(verts[0].getX() + (i / 16) * size, verts[0].getY() + (j / 16) * size, height, slope));
             }
         }
     }
@@ -863,22 +858,17 @@ public class QuadSquare {
         if (dirtyScope == 0) {
             return;
         } else {
-            if (enabled){
-                if (dirtyScope > 1) {
-                    updateTexture();
-                }
-                for (int i = 0; i < children.length; i++) {
-                    if (children[i] != null) {
-                        children[i].updateTextures();
-                    }
-                }
-            } else {
-                texture = null;
+            if (dirtyScope != 1) {
+                updateTexture();
+            }
+            for (int i = 0; i < children.length; i++) {
+                children[i].updateTextures();
             }
         }
     }
     
     public void render() {
+        ObservableFloatArray test = FXCollections.observableFloatArray();
         if (dirtyScope == 0) {
             return;
         } else if (dirtyScope == 1 || dirtyScope == 2) {
@@ -902,7 +892,7 @@ public class QuadSquare {
                     parent.meshGroup.getChildren().add(meshGroup);
                 }
             }
-            
+
             ((PhongMaterial)mesh.getMaterial()).setDiffuseMap(texture);
             if (enabled) {
                 TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
