@@ -181,9 +181,9 @@ public class Vec3D {
     }
     
     public static Vec3D lerp(Vec3D vec1, Vec3D vec2, float t) {
-        return new Vec3D(t * vec1.x + (1 - t) * vec2.x,
-                            t * vec1.y + (1 - t) * vec2.y,
-                            t * vec1.z + (1 - t) * vec2.z);
+        return new Vec3D((1 - t) * vec1.x + t * vec2.x,
+                            (1 - t) * vec1.y + t * vec2.y,
+                            (1 - t) * vec1.z + t * vec2.z);
     }
     
     public Vec3D copy() {
