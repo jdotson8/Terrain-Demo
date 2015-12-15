@@ -6,6 +6,7 @@
 package main.expressions;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -19,7 +20,7 @@ public class NumberNode implements ASTNode {
     }
 
     @Override
-    public double getValue() {
+    public double getValue(Map<String, Double> values) {
         return value;
     }
     

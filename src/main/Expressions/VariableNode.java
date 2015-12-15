@@ -6,6 +6,7 @@
 package main.expressions;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -13,19 +14,17 @@ import java.util.HashMap;
  */
 public class VariableNode implements ASTNode {
     String name;
-    HashMap<String, Double> values;
 
-    public VariableNode(String name, HashMap<String, Double> values) {
+    public VariableNode(String name) {
         if (!name.matches("[a-zA-Z_]*+")) {
             throw new IllegalArgumentException("Invalid variable name.");
         } else {
             this.name = name;
         }
-        this.values = values;
     }
 
     @Override
-    public double getValue() {
+    public double getValue(Map<String, Double> values) {
         if (values.containsKey(name)) {
             return values.get(name);
         } else {

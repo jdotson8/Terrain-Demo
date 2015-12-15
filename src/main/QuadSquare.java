@@ -743,14 +743,16 @@ public class QuadSquare {
         isDirty = false;
     }
     
-    public void render(Color c) {
+    public void render(Color c, boolean wireFrame) {
         if (!isDirty) {
             return;
         }
         
         if (mesh == null) {
             mesh = new MeshView(new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD));
-            //mesh.setDrawMode(DrawMode.LINE);
+            if (wireFrame) {
+                mesh.setDrawMode(DrawMode.LINE);
+            }
             meshGroup.getChildren().add(mesh);
             if (parent != null) {
                 parent.meshGroup.getChildren().add(meshGroup);
@@ -761,7 +763,7 @@ public class QuadSquare {
             }
         }
         
-        //mesh.setMaterial(new PhongMaterial(c));
+        mesh.setMaterial(new PhongMaterial(c));
         if (enabled) {
             boolean connectPoints = false;
             TriangleMesh squareMesh = (TriangleMesh) mesh.getMesh();
@@ -780,7 +782,7 @@ public class QuadSquare {
             for (int i = 0; i < 4; i++) {
                 if (children[i] != null && children[i].enabled) {
                     //if (children[i].isDirty) {
-                        children[i].render(c);
+                        children[i].render(c, wireFrame);
                     //}
                     connectPoints = false;
                     if (children[(i + 1) % 4] == null || (children[(i + 1) % 4] != null && !children[(i + 1) % 4].enabled)) {
@@ -791,7 +793,7 @@ public class QuadSquare {
                     }
                 } else {
                     if (children[i] != null) {// && children[i].isDirty) {
-                        children[i].render(c);
+                        children[i].render(c, wireFrame);
                     }
                     points.addAll(corners[i].getX(), corners[i].getY(), data.getHeight(corners[i]));
                     normalized = data.getNormal(corners[i]);

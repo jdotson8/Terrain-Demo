@@ -7,6 +7,7 @@ package main.expressions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -18,57 +19,57 @@ public abstract class Function {
         DEFAULT_FUNCTIONS.add(new Function("sin", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.sin(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.sin(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("cos", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.cos(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.cos(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("tan", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.sin(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.sin(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("log", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.log(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.log(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("log10", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.log10(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.log10(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("logb", 2) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.log(arguments.get(0).getValue()) / Math.log(arguments.get(1).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.log(arguments.get(0).getValue(values)) / Math.log(arguments.get(1).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("abs", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.abs(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.abs(arguments.get(0).getValue(values));
             }
         });
         DEFAULT_FUNCTIONS.add(new Function("sqrt", 1) {
 
             @Override
-            public double evaluate(List<ASTNode> arguments) {
-                return Math.sqrt(arguments.get(0).getValue());
+            public double evaluate(List<ASTNode> arguments, Map<String, Double> values) {
+                return Math.sqrt(arguments.get(0).getValue(values));
             }
         });
     }
@@ -93,5 +94,5 @@ public abstract class Function {
         return argumentCount;
     }
     
-    public abstract double evaluate(List<ASTNode> arguments);
+    public abstract double evaluate(List<ASTNode> arguments, Map<String, Double> values);
 }

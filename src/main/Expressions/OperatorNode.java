@@ -7,6 +7,7 @@ package main.expressions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -26,8 +27,8 @@ public class OperatorNode implements ASTNode{
     }
 
     @Override
-    public double getValue() {
-        return operator.operate(operands);
+    public double getValue(Map<String, Double> values) {
+        return operator.operate(operands, values);
     }
 
     @Override

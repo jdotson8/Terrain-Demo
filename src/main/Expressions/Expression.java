@@ -8,6 +8,7 @@ package main.expressions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -142,7 +143,7 @@ public class Expression {
             } else if (grammar.containsFunction(components[i]) && i < components.length - 1 && components[i+1].equals("(")) {
                 evaluable.push(components[i]);
             } else if (grammar.containsVariable(components[i])) {
-                evaluated.push(new VariableNode(components[i], values));
+                evaluated.push(new VariableNode(components[i]));
             } else if (components[i].matches("\\d+(\\.\\d+)?")) {
                 evaluated.push(new NumberNode(Double.parseDouble(components[i])));
             } else {
@@ -188,8 +189,8 @@ public class Expression {
         }
     }
     
-    public double evaluate() {
-        return root.getValue();
+    public double evaluate(Map<String, Double> values) {
+        return root.getValue(values);
     }
     
     public void print() {

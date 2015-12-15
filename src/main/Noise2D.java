@@ -7,6 +7,8 @@ package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.StringProperty;
@@ -142,7 +144,7 @@ public class Noise2D {
     public double getValue(double x, double y) {
         double value = 0;
         for (NoiseLayer layer : noiseLayers) {
-            value += layer.amplitude * sample(layer.frequency * x, layer.frequency * y);
+            value += layer.getValue(x, y);
         }
         //try {Thread.sleep(20L);} catch(Exception e){}
         return value;
@@ -179,8 +181,9 @@ public class Noise2D {
         }
 
         public double getValue(double x, double y) {
-            expression.setVariable("x", amplitude * sample(frequency * x, frequency * y));
-            return expression.evaluate();
+            Map<String, Double> values = new HashMap<>();
+            values.put("x", amplitude * sample(frequency * x, frequency * y));
+            return expression.evaluate(values);
         }
     }
 }

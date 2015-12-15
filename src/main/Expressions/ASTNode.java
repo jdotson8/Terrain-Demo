@@ -5,11 +5,13 @@
  */
 package main.expressions;
 
+import java.util.Map;
+
 /**
  *
  * @author Administrator
  */
 public interface ASTNode {
-    public abstract double getValue();
+    public abstract double getValue(Map<String, Double> values);
     public abstract void print();
 }

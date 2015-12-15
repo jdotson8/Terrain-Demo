@@ -7,6 +7,7 @@ package main.expressions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -18,43 +19,43 @@ public abstract class Operator {
         DEFAULT_OPERATORS.add(new Operator("+", true, false, 1){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue() + operands.get(1).getValue();
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return operands.get(0).getValue(values) + operands.get(1).getValue(values);
             }
         });
         DEFAULT_OPERATORS.add(new Operator("-", true, false, 1){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue() - operands.get(1).getValue();
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return operands.get(0).getValue(values) - operands.get(1).getValue(values);
             }
         });
         DEFAULT_OPERATORS.add(new Operator("-", false, true, 1){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return -operands.get(0).getValue();
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return -operands.get(0).getValue(values);
             }
         });
         DEFAULT_OPERATORS.add(new Operator("*", true, false, 2){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue() * operands.get(1).getValue();
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return operands.get(0).getValue(values) * operands.get(1).getValue(values);
             }
         });
         DEFAULT_OPERATORS.add(new Operator("/", true, false, 2){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return operands.get(0).getValue() / operands.get(1).getValue();
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return operands.get(0).getValue(values) / operands.get(1).getValue(values);
             }
         });
         DEFAULT_OPERATORS.add(new Operator("^", true, true, 3){
 
             @Override
-            public double operate(List<ASTNode> operands) {
-                return Math.pow(operands.get(0).getValue(), operands.get(1).getValue());
+            public double operate(List<ASTNode> operands, Map<String, Double> values) {
+                return Math.pow(operands.get(0).getValue(values), operands.get(1).getValue(values));
             }
         });
     }
@@ -91,5 +92,5 @@ public abstract class Operator {
         return precedence > other.precedence ? 1 : other.precedence == precedence ? 0 : -1;
     }
     
-    public abstract double operate(List<ASTNode> operands);
+    public abstract double operate(List<ASTNode> operands, Map<String, Double> values);
 }

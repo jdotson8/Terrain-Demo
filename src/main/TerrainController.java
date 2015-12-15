@@ -76,7 +76,6 @@ public class TerrainController extends AnimationTimer implements Initializable {
     private final long[] frameTimes = new long[100];
     private int frameTimeIndex = 0 ;
     private boolean arrayFilled = false ;
-    public static boolean update = true;
     
     TriangleMesh mesh;
     Random r = new Random();
@@ -87,6 +86,11 @@ public class TerrainController extends AnimationTimer implements Initializable {
     
     MeshView normals = new MeshView(new TriangleMesh());
     MeshView lights = new MeshView(new TriangleMesh());
+    
+    private boolean wireFrame;
+    private boolean colored;
+    private boolean update;
+    private boolean smoothShade;
 
 
     /**
@@ -103,6 +107,9 @@ public class TerrainController extends AnimationTimer implements Initializable {
         inputMap.put(KeyCode.R, false);
         inputMap.put(KeyCode.SHIFT, false);
         inputMap.put(KeyCode.SPACE, false);
+        inputMap.put(KeyCode.DIGIT1, false);
+        inputMap.put(KeyCode.DIGIT2, false);
+        inputMap.put(KeyCode.DIGIT3, false);
         initInputMap(terrainView);
         initView();
         buildTest();
@@ -187,10 +194,11 @@ public class TerrainController extends AnimationTimer implements Initializable {
         Random r = new Random();
         long seed = r.nextLong();
         System.out.println("Seed: " + seed);
-        Noise2D noise = new Noise2D(-4402001516981054855L);
+        Noise2D noise = new Noise2D(seed);
         Noise2D noise2 = new Noise2D(seed);
-        noise.addNoiseLayer(30, 0.005, "x");
-        noise.addNoiseLayer(2, 0.03, "x");
+        noise.addNoiseLayer(50, 0.003, "1-abs(x)");
+        noise.addNoiseLayer(50, 0.002, "x");
+        noise.addNoiseLayer(4, 0.009, "x^2");
         //noise.addNoiseLayer(5, 0.023, "x");
         //noise.addNoiseLayer(2, 0.3, "x");
         //noise.addNoiseLayer(1, 0.4, "x");
@@ -281,16 +289,22 @@ public class TerrainController extends AnimationTimer implements Initializable {
             cameraY.set(cameraY.get() - CAMERA_TRANSLATE_SPEED * (Math.cos(yaw.get())));
         }
         if (inputMap.get(KeyCode.SHIFT)) {
-            light.setTranslateZ(light.getTranslateZ() - 10);
-            //cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
+            cameraZ.set(cameraZ.get() - CAMERA_TRANSLATE_SPEED);
         }
         if (inputMap.get(KeyCode.SPACE)) {
-            light.setTranslateZ(light.getTranslateZ() + 10);
-            //Transform t = cameraTransform.getLocalToSceneTransform();
-            //test.test();
-            //System.out.println(cameraX.getValue() + " " + cameraY.getValue());
-            //cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
-            inputMap.put(KeyCode.SPACE, false);
+            cameraZ.set(cameraZ.get() + CAMERA_TRANSLATE_SPEED);
+        }
+        if (inputMap.get(KeyCode.DIGIT1)) {
+            update = !update;
+            inputMap.put(KeyCode.DIGIT1, false);
+        }
+        if (inputMap.get(KeyCode.DIGIT2)) {
+            wireFrame = !wireFrame;
+            inputMap.put(KeyCode.DIGIT2, false);
+        }
+        if (inputMap.get(KeyCode.DIGIT3)) {
+            colored = !colored;
+            inputMap.put(KeyCode.DIGIT3, false);
         }
         if (inputMap.get(KeyCode.R)) {
 //            if (service.getState() != Worker.State.RUNNING) {
@@ -308,10 +322,9 @@ public class TerrainController extends AnimationTimer implements Initializable {
         }
         if (service.getState() != Worker.State.RUNNING) {
                 c = c.deriveColor(0.5, 1, 1, 1);
-                test.render(c);
+                test.render((colored) ? c : Color.WHITE, wireFrame);
                 if (update)
-                    test.test((TriangleMesh)normals.getMesh(), (TriangleMesh)lights.getMesh(), (float)light.getTranslateX(), (float)light.getTranslateY(), (float)light.getTranslateZ());
-                service.restart();
+                    service.restart();
         } else {
             //System.out.println(service.getState());
         }
